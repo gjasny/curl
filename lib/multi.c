@@ -1832,7 +1832,7 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
     case CURLM_STATE_WAITCONNECT:
       /* awaiting a completion of an asynch TCP connect */
       DEBUGASSERT(data->conn);
-      result = Curl_is_connected(data->conn, FIRSTSOCKET, &connected);
+      result = Curl_is_connected(data, data->conn, FIRSTSOCKET, &connected);
       if(connected && !result) {
 #ifndef CURL_DISABLE_HTTP
         if(

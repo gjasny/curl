@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -671,7 +671,7 @@ struct Curl_addrinfo *Curl_resolver_getaddrinfo(struct connectdata *conn,
     res->last_status = ARES_ENOTFOUND;
 #ifdef ENABLE_IPV6
     if(family == PF_UNSPEC) {
-      if(Curl_ipv6works(conn)) {
+      if(Curl_ipv6works(data)) {
         res->num_pending = 2;
 
         /* areschannel is already setup in the Curl_open() function */

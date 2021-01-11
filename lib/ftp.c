@@ -211,10 +211,11 @@ const struct Curl_handler Curl_handler_ftps = {
 };
 #endif
 
-static void close_secondarysocket(struct connectdata *conn)
+static void close_secondarysocket(struct Curl_easy *data,
+                                  struct connectdata *conn)
 {
   if(CURL_SOCKET_BAD != conn->sock[SECONDARYSOCKET]) {
-    Curl_closesocket(conn, conn->sock[SECONDARYSOCKET]);
+    Curl_closesocket(data, conn, conn->sock[SECONDARYSOCKET]);
     conn->sock[SECONDARYSOCKET] = CURL_SOCKET_BAD;
   }
   conn->bits.tcpconnect[SECONDARYSOCKET] = FALSE;
@@ -278,7 +279,7 @@ static CURLcode AcceptServerConnect(struct Curl_easy *data)
 
     s = accept(sock, (struct sockaddr *) &add, &size);
   }
-  Curl_closesocket(conn, sock); /* close the first socket */
+  Curl_closesocket(data, conn, sock); /* close the first socket */
 
   if(CURL_SOCKET_BAD == s) {
     failf(data, "Error accept()ing server connect");
@@ -304,7 +305,7 @@ static CURLcode AcceptServerConnect(struct Curl_easy *data)
     Curl_set_in_callback(data, false);
 
     if(error) {
-      close_secondarysocket(conn);
+      close_secondarysocket(data, conn);
       return CURLE_ABORTED_BY_CALLBACK;
     }
   }
@@ -1097,7 +1098,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
   portsock = CURL_SOCKET_BAD;
   error = 0;
   for(ai = res; ai; ai = ai->ai_next) {
-    result = Curl_socket(conn, ai, NULL, &portsock);
+    result = Curl_socket(data, ai, NULL, &portsock);
     if(result) {
       error = SOCKERRNO;
       continue;
@@ -1137,7 +1138,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
         if(getsockname(conn->sock[FIRSTSOCKET], sa, &sslen)) {
           failf(data, "getsockname() failed: %s",
                 Curl_strerror(SOCKERRNO, buffer, sizeof(buffer)));
-          Curl_closesocket(conn, portsock);
+          Curl_closesocket(data, conn, portsock);
           return CURLE_FTP_PORT_FAILED;
         }
         port = port_min;
@@ -1147,7 +1148,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
       if(error != EADDRINUSE && error != EACCES) {
         failf(data, "bind(port=%hu) failed: %s", port,
               Curl_strerror(error, buffer, sizeof(buffer)));
-        Curl_closesocket(conn, portsock);
+        Curl_closesocket(data, conn, portsock);
         return CURLE_FTP_PORT_FAILED;
       }
     }
@@ -1160,7 +1161,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
   /* maybe all ports were in use already*/
   if(port > port_max) {
     failf(data, "bind() failed, we ran out of ports!");
-    Curl_closesocket(conn, portsock);
+    Curl_closesocket(data, conn, portsock);
     return CURLE_FTP_PORT_FAILED;
   }
 
@@ -1170,7 +1171,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
   if(getsockname(portsock, (struct sockaddr *)sa, &sslen)) {
     failf(data, "getsockname() failed: %s",
           Curl_strerror(SOCKERRNO, buffer, sizeof(buffer)));
-    Curl_closesocket(conn, portsock);
+    Curl_closesocket(data, conn, portsock);
     return CURLE_FTP_PORT_FAILED;
   }
 
@@ -1179,7 +1180,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
   if(listen(portsock, 1)) {
     failf(data, "socket failure: %s",
           Curl_strerror(SOCKERRNO, buffer, sizeof(buffer)));
-    Curl_closesocket(conn, portsock);
+    Curl_closesocket(data, conn, portsock);
     return CURLE_FTP_PORT_FAILED;
   }
 
@@ -1234,7 +1235,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
       if(result) {
         failf(data, "Failure sending EPRT command: %s",
               curl_easy_strerror(result));
-        Curl_closesocket(conn, portsock);
+        Curl_closesocket(data, conn, portsock);
         /* don't retry using PORT */
         ftpc->count1 = PORT;
         /* bail out */
@@ -1265,7 +1266,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
       if(result) {
         failf(data, "Failure sending PORT command: %s",
               curl_easy_strerror(result));
-        Curl_closesocket(conn, portsock);
+        Curl_closesocket(data, conn, portsock);
         /* bail out */
         state(data, FTP_STOP);
         return result;
@@ -1277,7 +1278,7 @@ static CURLcode ftp_state_use_port(struct Curl_easy *data,
   /* store which command was sent */
   ftpc->count1 = fcmd;
 
-  close_secondarysocket(conn);
+  close_secondarysocket(data, conn);
 
   /* we set the secondary socket variable to this for now, it is only so that
      the cleanup function will close it in case we fail before the true
@@ -1959,7 +1960,7 @@ static CURLcode ftp_state_pasv_resp(struct Curl_easy *data,
 
     /* postponed address resolution in case of tcp fastopen */
     if(conn->bits.tcp_fastopen && !conn->bits.reuse && !ftpc->newhost[0]) {
-      Curl_conninfo_remote(conn, conn->sock[FIRSTSOCKET]);
+      Curl_conninfo_remote(data, conn, conn->sock[FIRSTSOCKET]);
       Curl_safefree(ftpc->newhost);
       ftpc->newhost = strdup(control_address(conn));
       if(!ftpc->newhost)
@@ -1980,7 +1981,7 @@ static CURLcode ftp_state_pasv_resp(struct Curl_easy *data,
   }
 
   conn->bits.tcpconnect[SECONDARYSOCKET] = FALSE;
-  result = Curl_connecthost(conn, addr);
+  result = Curl_connecthost(data, conn, addr);
 
   if(result) {
     Curl_resolv_unlock(data, addr); /* we're done using this address */
@@ -3281,7 +3282,7 @@ static CURLcode ftp_done(struct Curl_easy *data, CURLcode status,
       /* Note that we keep "use" set to TRUE since that (next) connection is
          still requested to use SSL */
     }
-    close_secondarysocket(conn);
+    close_secondarysocket(data, conn);
   }
 
   if(!result && (ftp->transfer == FTPTRANSFER_BODY) && ftpc->ctl_valid &&
@@ -3540,7 +3541,7 @@ static CURLcode ftp_do_more(struct Curl_easy *data, int *completep)
       return result;
     }
 
-    result = Curl_is_connected(conn, SECONDARYSOCKET, &connected);
+    result = Curl_is_connected(data, conn, SECONDARYSOCKET, &connected);
 
     /* Ready to do more? */
     if(connected) {
@@ -4229,7 +4230,7 @@ static CURLcode ftp_dophase_done(struct Curl_easy *data, bool connected)
     CURLcode result = ftp_do_more(data, &completed);
 
     if(result) {
-      close_secondarysocket(conn);
+      close_secondarysocket(data, conn);
       return result;
     }
   }

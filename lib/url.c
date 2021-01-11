@@ -725,13 +725,13 @@ static void conn_shutdown(struct Curl_easy *data, struct connectdata *conn)
 
   /* close possibly still open sockets */
   if(CURL_SOCKET_BAD != conn->sock[SECONDARYSOCKET])
-    Curl_closesocket(conn, conn->sock[SECONDARYSOCKET]);
+    Curl_closesocket(data, conn, conn->sock[SECONDARYSOCKET]);
   if(CURL_SOCKET_BAD != conn->sock[FIRSTSOCKET])
-    Curl_closesocket(conn, conn->sock[FIRSTSOCKET]);
+    Curl_closesocket(data, conn, conn->sock[FIRSTSOCKET]);
   if(CURL_SOCKET_BAD != conn->tempsock[0])
-    Curl_closesocket(conn, conn->tempsock[0]);
+    Curl_closesocket(data, conn, conn->tempsock[0]);
   if(CURL_SOCKET_BAD != conn->tempsock[1])
-    Curl_closesocket(conn, conn->tempsock[1]);
+    Curl_closesocket(data, conn, conn->tempsock[1]);
 }
 
 static void conn_free(struct connectdata *conn)
@@ -3345,7 +3345,8 @@ static CURLcode resolve_server(struct Curl_easy *data,
  * previously existing one.  All relevant data is copied over and old_conn is
  * ready for freeing once this function returns.
  */
-static void reuse_conn(struct connectdata *old_conn,
+static void reuse_conn(struct Curl_easy *data,
+                       struct connectdata *old_conn,
                        struct connectdata *conn)
 {
 #ifndef CURL_DISABLE_PROXY
@@ -3360,7 +3361,7 @@ static void reuse_conn(struct connectdata *old_conn,
      allocated in vain and is targeted for destruction */
   Curl_free_primary_ssl_config(&old_conn->ssl_config);
 
-  conn->data = old_conn->data;
+  conn->data = data;
 
   /* get the user+password information from the old_conn struct since it may
    * be new for this request even when we re-use an existing connection */
@@ -3414,7 +3415,7 @@ static void reuse_conn(struct connectdata *old_conn,
   old_conn->hostname_resolve = NULL;
 
   /* persist connection info in session handle */
-  Curl_persistconninfo(conn);
+  Curl_persistconninfo(data, conn);
 
   conn_reset_all_postponed_data(old_conn); /* free buffers */
 
@@ -3628,7 +3629,7 @@ static CURLcode create_conn(struct Curl_easy *data,
     /* this is supposed to be the connect function so we better at least check
        that the file is present here! */
     DEBUGASSERT(conn->handler->connect_it);
-    Curl_persistconninfo(conn);
+    Curl_persistconninfo(data, conn);
     result = conn->handler->connect_it(data, &done);
 
     /* Setup a "faked" transfer that'll do nothing */
@@ -3760,12 +3761,11 @@ static CURLcode create_conn(struct Curl_easy *data,
 
   if(reuse) {
     /*
-     * We already have a connection for this, we got the former connection
-     * in the conn_temp variable and thus we need to cleanup the one we
-     * just allocated before we can move along and use the previously
-     * existing one.
+     * We already have a connection for this, we got the former connection in
+     * the conn_temp variable and thus we need to cleanup the one we just
+     * allocated before we can move along and use the previously existing one.
      */
-    reuse_conn(conn, conn_temp);
+    reuse_conn(data, conn, conn_temp);
 #ifdef USE_SSL
     free(conn->ssl_extra);
 #endif
@@ -3966,7 +3966,7 @@ CURLcode Curl_setup_conn(struct connectdata *conn,
 
   if(CURL_SOCKET_BAD == conn->sock[FIRSTSOCKET]) {
     conn->bits.tcpconnect[FIRSTSOCKET] = FALSE;
-    result = Curl_connecthost(conn, conn->dns_entry);
+    result = Curl_connecthost(data, conn, conn->dns_entry);
     if(result)
       return result;
   }
@@ -3977,7 +3977,7 @@ CURLcode Curl_setup_conn(struct connectdata *conn,
       Curl_pgrsTime(data, TIMER_APPCONNECT); /* we're connected already */
     conn->bits.tcpconnect[FIRSTSOCKET] = TRUE;
     *protocol_done = TRUE;
-    Curl_updateconninfo(conn, conn->sock[FIRSTSOCKET]);
+    Curl_updateconninfo(data, conn, conn->sock[FIRSTSOCKET]);
     Curl_verboseconnect(conn);
   }
 

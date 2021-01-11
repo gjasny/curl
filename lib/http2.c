@@ -72,7 +72,6 @@ static bool http2_connisdead(struct Curl_easy *data,
 static int h2_session_send(struct Curl_easy *data,
                            nghttp2_session *h2);
 static int h2_process_pending_input(struct Curl_easy *data,
-                                    struct connectdata *conn,
                                     struct http_conn *httpc,
                                     CURLcode *err);
 
@@ -205,7 +204,7 @@ static bool http2_connisdead(struct Curl_easy *data, struct connectdata *conn)
               (int)nread);
         httpc->nread_inbuf = 0;
         httpc->inbuflen = nread;
-        (void)h2_process_pending_input(data, conn, httpc, &result);
+        (void)h2_process_pending_input(data, httpc, &result);
       }
       else
         /* the read failed so let's say this is dead anyway */
@@ -1332,7 +1331,6 @@ static int should_close_session(struct http_conn *httpc)
  * be assigned to *err.
  */
 static int h2_process_pending_input(struct Curl_easy *data,
-                                    struct connectdata *conn,
                                     struct http_conn *httpc,
                                     CURLcode *err)
 {
@@ -1378,7 +1376,7 @@ static int h2_process_pending_input(struct Curl_easy *data,
        the connection may not be reused. This is set when a
        GOAWAY frame has been received or when the limit of stream
        identifiers has been reached. */
-    connclose(conn, "http/2: No new requests allowed");
+    connclose(data->conn, "http/2: No new requests allowed");
   }
 
   if(should_close_session(httpc)) {
@@ -1388,7 +1386,7 @@ static int h2_process_pending_input(struct Curl_easy *data,
       *err = CURLE_HTTP2;
     else {
       /* not an error per se, but should still close the connection */
-      connclose(conn, "GOAWAY received");
+      connclose(data->conn, "GOAWAY received");
       *err = CURLE_OK;
     }
     return -1;
@@ -1421,7 +1419,7 @@ CURLcode Curl_http2_done_sending(struct Curl_easy *data,
       /* resume sending here to trigger the callback to get called again so
          that it can signal EOF to nghttp2 */
       (void)nghttp2_session_resume_data(h2, stream->stream_id);
-      (void)h2_process_pending_input(data, conn, httpc, &result);
+      (void)h2_process_pending_input(data, httpc, &result);
     }
 
     /* If nghttp2 still has pending frames unsent */
@@ -1456,7 +1454,7 @@ static ssize_t http2_handle_stream_close(struct connectdata *conn,
   drained_transfer(data, httpc);
 
   if(httpc->pause_stream_id == 0) {
-    if(h2_process_pending_input(data, conn, httpc, err) != 0) {
+    if(h2_process_pending_input(data, httpc, err) != 0) {
       return -1;
     }
   }
@@ -1637,7 +1635,7 @@ static ssize_t http2_recv(struct connectdata *conn, int sockindex,
       /* We have paused nghttp2, but we have no pause data (see
          on_data_chunk_recv). */
       httpc->pause_stream_id = 0;
-      if(h2_process_pending_input(data, conn, httpc, err) != 0) {
+      if(h2_process_pending_input(data, httpc, err) != 0) {
         return -1;
       }
     }
@@ -1665,7 +1663,7 @@ static ssize_t http2_recv(struct connectdata *conn, int sockindex,
          frames, then we have to call it again with 0-length data.
          Without this, on_stream_close callback will not be called,
          and stream could be hanged. */
-      if(h2_process_pending_input(data, conn, httpc, err) != 0) {
+      if(h2_process_pending_input(data, httpc, err) != 0) {
         return -1;
       }
     }
@@ -1730,7 +1728,7 @@ static ssize_t http2_recv(struct connectdata *conn, int sockindex,
                    nread));
     }
 
-    if(h2_process_pending_input(data, conn, httpc, err) != 0)
+    if(h2_process_pending_input(data, httpc, err) != 0)
       return -1;
   }
   if(stream->memlen) {
@@ -2293,7 +2291,7 @@ CURLcode Curl_http2_switched(struct Curl_easy *data,
 
   DEBUGASSERT(httpc->nread_inbuf == 0);
 
-  if(-1 == h2_process_pending_input(data, conn, httpc, &result))
+  if(-1 == h2_process_pending_input(data, httpc, &result))
     return CURLE_HTTP2;
 
   return CURLE_OK;
