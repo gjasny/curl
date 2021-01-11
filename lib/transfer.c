@@ -1079,7 +1079,7 @@ static CURLcode readwrite_upload(struct Curl_easy *data,
 
 #ifndef CURL_DISABLE_SMTP
       if(conn->handler->protocol & PROTO_FAMILY_SMTP) {
-        result = Curl_smtp_escape_eob(conn, nread);
+        result = Curl_smtp_escape_eob(data, nread);
         if(result)
           return result;
       }
