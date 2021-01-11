@@ -556,18 +556,19 @@ buffer_read(struct krb5buffer *buf, void *data, size_t len)
 }
 
 /* Matches Curl_recv signature */
-static ssize_t sec_recv(struct connectdata *conn, int sockindex,
+static ssize_t sec_recv(struct Curl_easy *data, int sockindex,
                         char *buffer, size_t len, CURLcode *err)
 {
   size_t bytes_read;
   size_t total_read = 0;
+  struct connectdata *conn = data->conn;
   curl_socket_t fd = conn->sock[sockindex];
 
   *err = CURLE_OK;
 
   /* Handle clear text response. */
   if(conn->sec_complete == 0 || conn->data_prot == PROT_CLEAR)
-      return sread(fd, buffer, len);
+    return sread(fd, buffer, len);
 
   if(conn->in_buffer.eof_flag) {
     conn->in_buffer.eof_flag = 0;
@@ -673,9 +674,10 @@ static ssize_t sec_write(struct connectdata *conn, curl_socket_t fd,
 }
 
 /* Matches Curl_send signature */
-static ssize_t sec_send(struct connectdata *conn, int sockindex,
+static ssize_t sec_send(struct Curl_easy *data, int sockindex,
                         const void *buffer, size_t len, CURLcode *err)
 {
+  struct connectdata *conn = data->conn;
   curl_socket_t fd = conn->sock[sockindex];
   *err = CURLE_OK;
   return sec_write(conn, fd, buffer, len);

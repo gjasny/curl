@@ -105,14 +105,14 @@
 #include "dynbuf.h"
 
 /* return the count of bytes sent, or -1 on error */
-typedef ssize_t (Curl_send)(struct connectdata *conn, /* connection data */
+typedef ssize_t (Curl_send)(struct Curl_easy *data,   /* transfer */
                             int sockindex,            /* socketindex */
                             const void *buf,          /* data to write */
                             size_t len,               /* max amount to write */
                             CURLcode *err);           /* error to return */
 
 /* return the count of bytes read, or -1 on error */
-typedef ssize_t (Curl_recv)(struct connectdata *conn, /* connection data */
+typedef ssize_t (Curl_recv)(struct Curl_easy *data,   /* transfer */
                             int sockindex,            /* socketindex */
                             char *buf,                /* store data here */
                             size_t len,               /* max amount to read */

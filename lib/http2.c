@@ -65,7 +65,7 @@
 #endif
 
 
-static ssize_t http2_recv(struct connectdata *conn, int sockindex,
+static ssize_t http2_recv(struct Curl_easy *data, int sockindex,
                           char *mem, size_t len, CURLcode *err);
 static bool http2_connisdead(struct Curl_easy *data,
                              struct connectdata *conn);
@@ -197,7 +197,7 @@ static bool http2_connisdead(struct Curl_easy *data, struct connectdata *conn)
       if(httpc->recv_underlying)
         /* if called "too early", this pointer isn't setup yet! */
         nread = ((Curl_recv *)httpc->recv_underlying)(
-          conn, FIRSTSOCKET, httpc->inbuf, H2_BUFSIZE, &result);
+          data, FIRSTSOCKET, httpc->inbuf, H2_BUFSIZE, &result);
       if(nread != -1) {
         infof(data,
               "%d bytes stray data read before trying h2 connection\n",
@@ -362,7 +362,7 @@ static ssize_t send_callback(nghttp2_session *h2,
     /* called before setup properly! */
     return NGHTTP2_ERR_CALLBACK_FAILURE;
 
-  written = ((Curl_send*)c->send_underlying)(conn, FIRSTSOCKET,
+  written = ((Curl_send*)c->send_underlying)(conn->data, FIRSTSOCKET,
                                              mem, length, &result);
 
   if(result == CURLE_AGAIN) {
@@ -1566,12 +1566,12 @@ static int h2_session_send(struct Curl_easy *data,
   return nghttp2_session_send(h2);
 }
 
-static ssize_t http2_recv(struct connectdata *conn, int sockindex,
+static ssize_t http2_recv(struct Curl_easy *data, int sockindex,
                           char *mem, size_t len, CURLcode *err)
 {
   ssize_t nread;
+  struct connectdata *conn = data->conn;
   struct http_conn *httpc = &conn->proto.httpc;
-  struct Curl_easy *data = conn->data;
   struct HTTP *stream = data->req.p.http;
 
   (void)sockindex; /* we always do HTTP2 on sockindex 0 */
@@ -1697,7 +1697,7 @@ static ssize_t http2_recv(struct connectdata *conn, int sockindex,
 
     if(httpc->inbuflen == 0) {
       nread = ((Curl_recv *)httpc->recv_underlying)(
-          conn, FIRSTSOCKET, httpc->inbuf, H2_BUFSIZE, err);
+        data, FIRSTSOCKET, httpc->inbuf, H2_BUFSIZE, err);
 
       if(nread == -1) {
         if(*err != CURLE_AGAIN)
@@ -1834,7 +1834,7 @@ static header_instruction inspect_header(const char *name, size_t namelen,
   }
 }
 
-static ssize_t http2_send(struct connectdata *conn, int sockindex,
+static ssize_t http2_send(struct Curl_easy *data, int sockindex,
                           const void *mem, size_t len, CURLcode *err)
 {
   /*
@@ -1843,8 +1843,8 @@ static ssize_t http2_send(struct connectdata *conn, int sockindex,
    * request.
    */
   int rv;
+  struct connectdata *conn = data->conn;
   struct http_conn *httpc = &conn->proto.httpc;
-  struct Curl_easy *data = conn->data;
   struct HTTP *stream = data->req.p.http;
   nghttp2_nv *nva = NULL;
   size_t nheader;

@@ -3330,10 +3330,11 @@ static CURLcode scp_done(struct Curl_easy *data, CURLcode status,
 
 }
 
-static ssize_t scp_send(struct connectdata *conn, int sockindex,
+static ssize_t scp_send(struct Curl_easy *data, int sockindex,
                         const void *mem, size_t len, CURLcode *err)
 {
   ssize_t nwrite;
+  struct connectdata *conn = data->conn;
   (void)sockindex; /* we only support SCP on the fixed known primary socket */
 
   /* libssh2_channel_write() returns int! */
@@ -3354,10 +3355,11 @@ static ssize_t scp_send(struct connectdata *conn, int sockindex,
   return nwrite;
 }
 
-static ssize_t scp_recv(struct connectdata *conn, int sockindex,
+static ssize_t scp_recv(struct Curl_easy *data, int sockindex,
                         char *mem, size_t len, CURLcode *err)
 {
   ssize_t nread;
+  struct connectdata *conn = data->conn;
   (void)sockindex; /* we only support SCP on the fixed known primary socket */
 
   /* libssh2_channel_read() returns int */
@@ -3465,12 +3467,11 @@ static CURLcode sftp_done(struct Curl_easy *data, CURLcode status,
 }
 
 /* return number of sent bytes */
-static ssize_t sftp_send(struct connectdata *conn, int sockindex,
+static ssize_t sftp_send(struct Curl_easy *data, int sockindex,
                          const void *mem, size_t len, CURLcode *err)
 {
-  ssize_t nwrite;   /* libssh2_sftp_write() used to return size_t in 0.14
-                       but is changed to ssize_t in 0.15. These days we don't
-                       support libssh2 0.15*/
+  ssize_t nwrite;
+  struct connectdata *conn = data->conn;
   (void)sockindex;
 
   nwrite = libssh2_sftp_write(conn->proto.sshc.sftp_handle, mem, len);
@@ -3493,10 +3494,11 @@ static ssize_t sftp_send(struct connectdata *conn, int sockindex,
  * Return number of received (decrypted) bytes
  * or <0 on error
  */
-static ssize_t sftp_recv(struct connectdata *conn, int sockindex,
+static ssize_t sftp_recv(struct Curl_easy *data, int sockindex,
                          char *mem, size_t len, CURLcode *err)
 {
   ssize_t nread;
+  struct connectdata *conn = data->conn;
   (void)sockindex;
 
   nread = libssh2_sftp_read(conn->proto.sshc.sftp_handle, mem, len);

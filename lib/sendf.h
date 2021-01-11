@@ -60,9 +60,9 @@ CURLcode Curl_read_plain(curl_socket_t sockfd,
                          size_t bytesfromsocket,
                          ssize_t *n);
 
-ssize_t Curl_recv_plain(struct connectdata *conn, int num, char *buf,
+ssize_t Curl_recv_plain(struct Curl_easy *data, int num, char *buf,
                         size_t len, CURLcode *code);
-ssize_t Curl_send_plain(struct connectdata *conn, int num,
+ssize_t Curl_send_plain(struct Curl_easy *data, int num,
                         const void *mem, size_t len, CURLcode *code);
 
 /* internal read-function, does plain socket, SSL and krb4 */

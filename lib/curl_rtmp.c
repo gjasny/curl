@@ -290,9 +290,10 @@ static CURLcode rtmp_disconnect(struct Curl_easy *data,
   return CURLE_OK;
 }
 
-static ssize_t rtmp_recv(struct connectdata *conn, int sockindex, char *buf,
+static ssize_t rtmp_recv(struct Curl_easy *data, int sockindex, char *buf,
                          size_t len, CURLcode *err)
 {
+  struct connectdata *conn = data->conn;
   RTMP *r = conn->proto.rtmp;
   ssize_t nread;
 
@@ -301,8 +302,8 @@ static ssize_t rtmp_recv(struct connectdata *conn, int sockindex, char *buf,
   nread = RTMP_Read(r, buf, curlx_uztosi(len));
   if(nread < 0) {
     if(r->m_read.status == RTMP_READ_COMPLETE ||
-        r->m_read.status == RTMP_READ_EOF) {
-      conn->data->req.size = conn->data->req.bytecount;
+       r->m_read.status == RTMP_READ_EOF) {
+      data->req.size = data->req.bytecount;
       nread = 0;
     }
     else
@@ -311,9 +312,10 @@ static ssize_t rtmp_recv(struct connectdata *conn, int sockindex, char *buf,
   return nread;
 }
 
-static ssize_t rtmp_send(struct connectdata *conn, int sockindex,
+static ssize_t rtmp_send(struct Curl_easy *data, int sockindex,
                          const void *buf, size_t len, CURLcode *err)
 {
+  struct connectdata *conn = data->conn;
   RTMP *r = conn->proto.rtmp;
   ssize_t num;
 

@@ -304,7 +304,7 @@ CURLcode Curl_write(struct Curl_easy *data,
   struct connectdata *conn = data->conn;
   int num = (sockfd == conn->sock[SECONDARYSOCKET]);
 
-  bytes_written = conn->send[num](conn, num, mem, len, &result);
+  bytes_written = conn->send[num](data, num, mem, len, &result);
 
   *written = bytes_written;
   if(bytes_written >= 0)
@@ -327,9 +327,10 @@ CURLcode Curl_write(struct Curl_easy *data,
   }
 }
 
-ssize_t Curl_send_plain(struct connectdata *conn, int num,
+ssize_t Curl_send_plain(struct Curl_easy *data, int num,
                         const void *mem, size_t len, CURLcode *code)
 {
+  struct connectdata *conn = data->conn;
   curl_socket_t sockfd = conn->sock[num];
   ssize_t bytes_written;
   /* WinSock will destroy unread received data if send() is
@@ -398,16 +399,17 @@ CURLcode Curl_write_plain(struct connectdata *conn,
   CURLcode result;
   int num = (sockfd == conn->sock[SECONDARYSOCKET]);
 
-  bytes_written = Curl_send_plain(conn, num, mem, len, &result);
+  bytes_written = Curl_send_plain(conn->data, num, mem, len, &result);
 
   *written = bytes_written;
 
   return result;
 }
 
-ssize_t Curl_recv_plain(struct connectdata *conn, int num, char *buf,
+ssize_t Curl_recv_plain(struct Curl_easy *data, int num, char *buf,
                         size_t len, CURLcode *code)
 {
+  struct connectdata *conn = data->conn;
   curl_socket_t sockfd = conn->sock[num];
   ssize_t nread;
   /* Check and return data that already received and storied in internal
@@ -681,7 +683,7 @@ CURLcode Curl_read(struct Curl_easy *data,   /* transfer */
   bytesfromsocket = CURLMIN(sizerequested, (size_t)data->set.buffer_size);
   buffertofill = buf;
 
-  nread = conn->recv[num](conn, num, buffertofill, bytesfromsocket, &result);
+  nread = conn->recv[num](data, num, buffertofill, bytesfromsocket, &result);
   if(nread < 0)
     return result;
 

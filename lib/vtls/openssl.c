@@ -4130,7 +4130,7 @@ static bool Curl_ossl_data_pending(const struct connectdata *conn,
 
 static size_t Curl_ossl_version(char *buffer, size_t size);
 
-static ssize_t ossl_send(struct connectdata *conn,
+static ssize_t ossl_send(struct Curl_easy *data,
                          int sockindex,
                          const void *mem,
                          size_t len,
@@ -4143,6 +4143,7 @@ static ssize_t ossl_send(struct connectdata *conn,
   unsigned long sslerror;
   int memlen;
   int rc;
+  struct connectdata *conn = data->conn;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   struct ssl_backend_data *backend = connssl->backend;
 
@@ -4174,7 +4175,7 @@ static ssize_t ossl_send(struct connectdata *conn,
           strncpy(error_buffer, SSL_ERROR_to_str(err), sizeof(error_buffer));
           error_buffer[sizeof(error_buffer) - 1] = '\0';
         }
-        failf(conn->data, OSSL_PACKAGE " SSL_write: %s, errno %d",
+        failf(data, OSSL_PACKAGE " SSL_write: %s, errno %d",
               error_buffer, sockerr);
         *curlcode = CURLE_SEND_ERROR;
         return -1;
@@ -4192,17 +4193,17 @@ static ssize_t ossl_send(struct connectdata *conn,
         ) {
         char ver[120];
         Curl_ossl_version(ver, 120);
-        failf(conn->data, "Error: %s does not support double SSL tunneling.",
+        failf(data, "Error: %s does not support double SSL tunneling.",
               ver);
       }
       else
-        failf(conn->data, "SSL_write() error: %s",
+        failf(data, "SSL_write() error: %s",
               ossl_strerror(sslerror, error_buffer, sizeof(error_buffer)));
       *curlcode = CURLE_SEND_ERROR;
       return -1;
     }
     /* a true error */
-    failf(conn->data, OSSL_PACKAGE " SSL_write: %s, errno %d",
+    failf(data, OSSL_PACKAGE " SSL_write: %s, errno %d",
           SSL_ERROR_to_str(err), SOCKERRNO);
     *curlcode = CURLE_SEND_ERROR;
     return -1;
@@ -4211,7 +4212,7 @@ static ssize_t ossl_send(struct connectdata *conn,
   return (ssize_t)rc; /* number of bytes */
 }
 
-static ssize_t ossl_recv(struct connectdata *conn, /* connection data */
+static ssize_t ossl_recv(struct Curl_easy *data,   /* transfer */
                          int num,                  /* socketindex */
                          char *buf,                /* store read data here */
                          size_t buffersize,        /* max amount to read */
@@ -4221,6 +4222,7 @@ static ssize_t ossl_recv(struct connectdata *conn, /* connection data */
   unsigned long sslerror;
   ssize_t nread;
   int buffsize;
+  struct connectdata *conn = data->conn;
   struct ssl_connect_data *connssl = &conn->ssl[num];
   struct ssl_backend_data *backend = connssl->backend;
 

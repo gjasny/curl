@@ -445,11 +445,11 @@ static CURLcode ldap_done(struct Curl_easy *data, CURLcode res,
   return CURLE_OK;
 }
 
-static ssize_t ldap_recv(struct connectdata *conn, int sockindex, char *buf,
+static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
                          size_t len, CURLcode *err)
 {
+  struct connectdata *conn = data->conn;
   struct ldapconninfo *li = conn->proto.ldapc;
-  struct Curl_easy *data = conn->data;
   struct ldapreqinfo *lr = data->req.p.ldap;
   int rc, ret;
   LDAPMessage *msg = NULL;
@@ -729,7 +729,7 @@ ldapsb_tls_read(Sockbuf_IO_Desc *sbiod, void *buf, ber_len_t len)
   ber_slen_t ret;
   CURLcode err = CURLE_RECV_ERROR;
 
-  ret = (li->recv)(conn, FIRSTSOCKET, buf, len, &err);
+  ret = (li->recv)(conn->data, FIRSTSOCKET, buf, len, &err);
   if(ret < 0 && err == CURLE_AGAIN) {
     SET_SOCKERRNO(EWOULDBLOCK);
   }
@@ -744,7 +744,7 @@ ldapsb_tls_write(Sockbuf_IO_Desc *sbiod, void *buf, ber_len_t len)
   ber_slen_t ret;
   CURLcode err = CURLE_SEND_ERROR;
 
-  ret = (li->send)(conn, FIRSTSOCKET, buf, len, &err);
+  ret = (li->send)(conn->data, FIRSTSOCKET, buf, len, &err);
   if(ret < 0 && err == CURLE_AGAIN) {
     SET_SOCKERRNO(EWOULDBLOCK);
   }

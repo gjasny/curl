@@ -1231,14 +1231,14 @@ static size_t drain_overflow_buffer(struct HTTP *stream)
 }
 
 /* incoming data frames on the h3 stream */
-static ssize_t ngh3_stream_recv(struct connectdata *conn,
+static ssize_t ngh3_stream_recv(struct Curl_easy *data,
                                 int sockindex,
                                 char *buf,
                                 size_t buffersize,
                                 CURLcode *curlcode)
 {
+  struct connectdata *conn = data->conn;
   curl_socket_t sockfd = conn->sock[sockindex];
-  struct Curl_easy *data = conn->data;
   struct HTTP *stream = data->req.p.http;
   struct quicsocket *qs = conn->quic;
 
@@ -1613,16 +1613,16 @@ fail:
   free(nva);
   return result;
 }
-static ssize_t ngh3_stream_send(struct connectdata *conn,
+static ssize_t ngh3_stream_send(struct Curl_easy *data,
                                 int sockindex,
                                 const void *mem,
                                 size_t len,
                                 CURLcode *curlcode)
 {
   ssize_t sent;
+  struct connectdata *conn = data->conn;
   struct quicsocket *qs = conn->quic;
   curl_socket_t sockfd = conn->sock[sockindex];
-  struct Curl_easy *data = conn->data;
   struct HTTP *stream = data->req.p.http;
 
   if(!stream->h3req) {
