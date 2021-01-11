@@ -375,9 +375,9 @@ ssize_t Curl_send_plain(struct Curl_easy *data, int num,
     }
     else {
       char buffer[STRERROR_LEN];
-      failf(conn->data, "Send failure: %s",
+      failf(data, "Send failure: %s",
             Curl_strerror(err, buffer, sizeof(buffer)));
-      conn->data->state.os_errno = err;
+      data->state.os_errno = err;
       *code = CURLE_SEND_ERROR;
     }
   }
@@ -442,9 +442,9 @@ ssize_t Curl_recv_plain(struct Curl_easy *data, int num, char *buf,
     }
     else {
       char buffer[STRERROR_LEN];
-      failf(conn->data, "Recv failure: %s",
+      failf(data, "Recv failure: %s",
             Curl_strerror(err, buffer, sizeof(buffer)));
-      conn->data->state.os_errno = err;
+      data->state.os_errno = err;
       *code = CURLE_RECV_ERROR;
     }
   }
@@ -503,12 +503,12 @@ static CURLcode pausewrite(struct Curl_easy *data,
  * client write callback(s) and takes care of pause requests from the
  * callbacks.
  */
-static CURLcode chop_write(struct connectdata *conn,
+static CURLcode chop_write(struct Curl_easy *data,
                            int type,
                            char *optr,
                            size_t olen)
 {
-  struct Curl_easy *data = conn->data;
+  struct connectdata *conn = data->conn;
   curl_write_callback writeheader = NULL;
   curl_write_callback writebody = NULL;
   char *ptr = optr;
@@ -598,13 +598,12 @@ static CURLcode chop_write(struct connectdata *conn,
    local character encoding.  This is a problem and should be changed in
    the future to leave the original data alone.
  */
-CURLcode Curl_client_write(struct connectdata *conn,
+CURLcode Curl_client_write(struct Curl_easy *data,
                            int type,
                            char *ptr,
                            size_t len)
 {
-  struct Curl_easy *data = conn->data;
-
+  struct connectdata *conn = data->conn;
   if(0 == len)
     len = strlen(ptr);
 
@@ -626,7 +625,7 @@ CURLcode Curl_client_write(struct connectdata *conn,
 #endif /* CURL_DO_LINEEND_CONV */
     }
 
-  return chop_write(conn, type, ptr, len);
+  return chop_write(data, type, ptr, len);
 }
 
 CURLcode Curl_read_plain(curl_socket_t sockfd,

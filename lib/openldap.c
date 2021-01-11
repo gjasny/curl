@@ -517,20 +517,20 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
       *err = CURLE_RECV_ERROR;
       return -1;
     }
-    writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"DN: ", 4);
+    writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"DN: ", 4);
     if(writeerr) {
       *err = writeerr;
       return -1;
     }
 
-    writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)bv.bv_val,
+    writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)bv.bv_val,
                                  bv.bv_len);
     if(writeerr) {
       *err = writeerr;
       return -1;
     }
 
-    writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"\n", 1);
+    writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"\n", 1);
     if(writeerr) {
       *err = writeerr;
       return -1;
@@ -551,18 +551,18 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
         binary = 0;
 
       if(bvals == NULL) {
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"\t", 1);
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"\t", 1);
         if(writeerr) {
           *err = writeerr;
           return -1;
         }
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)bv.bv_val,
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)bv.bv_val,
                                      bv.bv_len);
         if(writeerr) {
           *err = writeerr;
           return -1;
         }
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)":\n", 2);
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)":\n", 2);
         if(writeerr) {
           *err = writeerr;
           return -1;
@@ -573,20 +573,20 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
 
       for(i = 0; bvals[i].bv_val != NULL; i++) {
         int binval = 0;
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"\t", 1);
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"\t", 1);
         if(writeerr) {
           *err = writeerr;
           return -1;
         }
 
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)bv.bv_val,
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)bv.bv_val,
                                      bv.bv_len);
         if(writeerr) {
           *err = writeerr;
           return -1;
         }
 
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)":", 1);
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)":", 1);
         if(writeerr) {
           *err = writeerr;
           return -1;
@@ -624,7 +624,7 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
             *err = error;
             return -1;
           }
-          writeerr = Curl_client_write(conn, CLIENTWRITE_BODY,
+          writeerr = Curl_client_write(data, CLIENTWRITE_BODY,
                                        (char *)": ", 2);
           if(writeerr) {
             *err = writeerr;
@@ -633,7 +633,7 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
 
           data->req.bytecount += 2;
           if(val_b64_sz > 0) {
-            writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, val_b64,
+            writeerr = Curl_client_write(data, CLIENTWRITE_BODY, val_b64,
                                          val_b64_sz);
             if(writeerr) {
               *err = writeerr;
@@ -644,13 +644,13 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
           }
         }
         else {
-          writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)" ", 1);
+          writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)" ", 1);
           if(writeerr) {
             *err = writeerr;
             return -1;
           }
 
-          writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, bvals[i].bv_val,
+          writeerr = Curl_client_write(data, CLIENTWRITE_BODY, bvals[i].bv_val,
                                        bvals[i].bv_len);
           if(writeerr) {
             *err = writeerr;
@@ -659,7 +659,7 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
 
           data->req.bytecount += bvals[i].bv_len + 1;
         }
-        writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"\n", 0);
+        writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"\n", 0);
         if(writeerr) {
           *err = writeerr;
           return -1;
@@ -668,14 +668,14 @@ static ssize_t ldap_recv(struct Curl_easy *data, int sockindex, char *buf,
         data->req.bytecount++;
       }
       ber_memfree(bvals);
-      writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"\n", 0);
+      writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"\n", 0);
       if(writeerr) {
         *err = writeerr;
         return -1;
       }
       data->req.bytecount++;
     }
-    writeerr = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)"\n", 0);
+    writeerr = Curl_client_write(data, CLIENTWRITE_BODY, (char *)"\n", 0);
     if(writeerr) {
       *err = writeerr;
       return -1;

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -126,7 +126,7 @@ CHUNKcode Curl_httpchunk_read(struct connectdata *conn,
   /* the original data is written to the client, but we go on with the
      chunk read process, to properly calculate the content length*/
   if(data->set.http_te_skip && !k->ignorebody) {
-    result = Curl_client_write(conn, CLIENTWRITE_BODY, datap, datalen);
+    result = Curl_client_write(data, CLIENTWRITE_BODY, datap, datalen);
     if(result) {
       *extrap = result;
       return CHUNKE_PASSTHRU_ERROR;
@@ -198,7 +198,7 @@ CHUNKcode Curl_httpchunk_read(struct connectdata *conn,
         if(!conn->data->set.http_ce_skip && k->writer_stack)
           result = Curl_unencode_write(conn, k->writer_stack, datap, piece);
         else
-          result = Curl_client_write(conn, CLIENTWRITE_BODY, datap, piece);
+          result = Curl_client_write(data, CLIENTWRITE_BODY, datap, piece);
 
         if(result) {
           *extrap = result;
@@ -249,7 +249,7 @@ CHUNKcode Curl_httpchunk_read(struct connectdata *conn,
             return CHUNKE_BAD_CHUNK;
 
           if(!data->set.http_te_skip) {
-            result = Curl_client_write(conn, CLIENTWRITE_HEADER, tr, trlen);
+            result = Curl_client_write(data, CLIENTWRITE_HEADER, tr, trlen);
             if(result) {
               *extrap = result;
               return CHUNKE_PASSTHRU_ERROR;

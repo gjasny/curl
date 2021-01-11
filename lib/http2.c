@@ -1502,7 +1502,7 @@ static ssize_t http2_handle_stream_close(struct connectdata *conn,
 
       Curl_debug(data, CURLINFO_HEADER_IN, trailp, len);
       /* pass the trailers one by one to the callback */
-      result = Curl_client_write(conn, CLIENTWRITE_HEADER, trailp, len);
+      result = Curl_client_write(data, CLIENTWRITE_HEADER, trailp, len);
       if(result) {
         *err = result;
         return -1;

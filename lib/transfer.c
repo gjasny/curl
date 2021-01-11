@@ -813,11 +813,11 @@ static CURLcode readwrite_data(struct Curl_easy *data,
 
           /* Don't let excess data pollute body writes */
           if(k->maxdownload == -1 || (curl_off_t)headlen <= k->maxdownload)
-            result = Curl_client_write(conn, CLIENTWRITE_BODY,
+            result = Curl_client_write(data, CLIENTWRITE_BODY,
                                        Curl_dyn_ptr(&data->state.headerb),
                                        headlen);
           else
-            result = Curl_client_write(conn, CLIENTWRITE_BODY,
+            result = Curl_client_write(data, CLIENTWRITE_BODY,
                                        Curl_dyn_ptr(&data->state.headerb),
                                        (size_t)k->maxdownload);
 
@@ -837,7 +837,7 @@ static CURLcode readwrite_data(struct Curl_easy *data,
                 result = Curl_pop3_write(data, k->str, nread);
               else
 #endif /* CURL_DISABLE_POP3 */
-                result = Curl_client_write(conn, CLIENTWRITE_BODY, k->str,
+                result = Curl_client_write(data, CLIENTWRITE_BODY, k->str,
                                            nread);
             }
           }

@@ -1072,7 +1072,7 @@ CURLcode curl_easy_pause(struct Curl_easy *data, int action)
         /* even if one function returns error, this loops through and frees
            all buffers */
         if(!result)
-          result = Curl_client_write(conn, writebuf[i].type,
+          result = Curl_client_write(data, writebuf[i].type,
                                      Curl_dyn_ptr(&writebuf[i].b),
                                      Curl_dyn_len(&writebuf[i].b));
         Curl_dyn_free(&writebuf[i].b);

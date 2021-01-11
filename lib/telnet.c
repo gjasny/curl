@@ -1021,7 +1021,7 @@ CURLcode telrcv(struct connectdata *conn,
 
 #define startskipping()                                       \
   if(startwrite >= 0) {                                       \
-    result = Curl_client_write(conn,                          \
+    result = Curl_client_write(data,                          \
                                CLIENTWRITE_BODY,              \
                                (char *)&inbuf[startwrite],    \
                                in-startwrite);                \

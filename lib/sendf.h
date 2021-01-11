@@ -49,7 +49,7 @@ void Curl_failf(struct Curl_easy *, const char *fmt, ...);
 #define CLIENTWRITE_HEADER (1<<1)
 #define CLIENTWRITE_BOTH   (CLIENTWRITE_BODY|CLIENTWRITE_HEADER)
 
-CURLcode Curl_client_write(struct connectdata *conn, int type, char *ptr,
+CURLcode Curl_client_write(struct Curl_easy *data, int type, char *ptr,
                            size_t len) WARN_UNUSED_RESULT;
 
 bool Curl_recv_has_postponed_data(struct connectdata *conn, int sockindex);

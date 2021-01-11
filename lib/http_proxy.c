@@ -430,7 +430,7 @@ static CURLcode CONNECT(struct connectdata *conn,
           if(data->set.include_header)
             writetype |= CLIENTWRITE_BODY;
 
-          result = Curl_client_write(conn, writetype, linep, perline);
+          result = Curl_client_write(data, writetype, linep, perline);
           if(result)
             return result;
         }

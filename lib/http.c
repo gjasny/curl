@@ -3919,7 +3919,7 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
         writetype |= CLIENTWRITE_BODY;
 
       headerlen = Curl_dyn_len(&data->state.headerb);
-      result = Curl_client_write(conn, writetype,
+      result = Curl_client_write(data, writetype,
                                  Curl_dyn_ptr(&data->state.headerb),
                                  headerlen);
       if(result)
@@ -4233,7 +4233,7 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
     Curl_debug(data, CURLINFO_HEADER_IN, headp,
                Curl_dyn_len(&data->state.headerb));
 
-    result = Curl_client_write(conn, writetype, headp,
+    result = Curl_client_write(data, writetype, headp,
                                Curl_dyn_len(&data->state.headerb));
     if(result)
       return result;

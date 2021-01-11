@@ -503,7 +503,7 @@ static CURLcode mqtt_read_publish(struct connectdata *conn,
 
     /* if QoS is set, message contains packet id */
 
-    result = Curl_client_write(conn, CLIENTWRITE_BODY, (char *)pkt, nread);
+    result = Curl_client_write(data, CLIENTWRITE_BODY, (char *)pkt, nread);
     if(result)
       goto end;
 

@@ -1344,7 +1344,7 @@ static CURLcode ssh_statemach_act(struct Curl_easy *data, bool *block)
         /* this sends an FTP-like "header" to the header callback so that the
            current directory can be read very similar to how it is read when
            using ordinary FTP. */
-        result = Curl_client_write(conn, CLIENTWRITE_HEADER, tmp, strlen(tmp));
+        result = Curl_client_write(data, CLIENTWRITE_HEADER, tmp, strlen(tmp));
         free(tmp);
         if(result) {
           state(conn, SSH_SFTP_CLOSE);
@@ -1797,7 +1797,7 @@ static CURLcode ssh_statemach_act(struct Curl_easy *data, bool *block)
           break;
         }
 
-        result = Curl_client_write(conn, CLIENTWRITE_HEADER, tmp, strlen(tmp));
+        result = Curl_client_write(data, CLIENTWRITE_HEADER, tmp, strlen(tmp));
         free(tmp);
         if(result) {
           state(conn, SSH_SFTP_CLOSE);
@@ -2146,11 +2146,11 @@ static CURLcode ssh_statemach_act(struct Curl_easy *data, bool *block)
         sshc->readdir_filename[readdir_len] = '\0';
 
         if(data->set.ftp_list_only) {
-          result = Curl_client_write(conn, CLIENTWRITE_BODY,
+          result = Curl_client_write(data, CLIENTWRITE_BODY,
                                      sshc->readdir_filename,
                                      readdir_len);
           if(!result)
-            result = Curl_client_write(conn, CLIENTWRITE_BODY,
+            result = Curl_client_write(data, CLIENTWRITE_BODY,
                                        (char *)"\n", 1);
           if(result) {
             state(conn, SSH_STOP);
@@ -2238,7 +2238,7 @@ static CURLcode ssh_statemach_act(struct Curl_easy *data, bool *block)
     case SSH_SFTP_READDIR_BOTTOM:
       result = Curl_dyn_addn(&sshc->readdir, "\n", 1);
       if(!result)
-        result = Curl_client_write(conn, CLIENTWRITE_BODY,
+        result = Curl_client_write(data, CLIENTWRITE_BODY,
                                    Curl_dyn_ptr(&sshc->readdir),
                                    Curl_dyn_len(&sshc->readdir));
 
