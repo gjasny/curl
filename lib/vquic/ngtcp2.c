@@ -843,9 +843,10 @@ int Curl_quic_ver(char *p, size_t len)
                    ng2->version_str, ht3->version_str);
 }
 
-static int ng_getsock(struct connectdata *conn, curl_socket_t *socks)
+static int ng_getsock(struct Curl_easy *data, struct connectdata *conn,
+                      curl_socket_t *socks)
 {
-  struct SingleRequest *k = &conn->data->req;
+  struct SingleRequest *k = &data->req;
   int bitmap = GETSOCK_BLANK;
 
   socks[0] = conn->sock[FIRSTSOCKET];

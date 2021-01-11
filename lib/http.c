@@ -94,7 +94,8 @@
  * Forward declarations.
  */
 
-static int http_getsock_do(struct connectdata *conn,
+static int http_getsock_do(struct Curl_easy *data,
+                           struct connectdata *conn,
                            curl_socket_t *socks);
 static bool http_should_fail(struct Curl_easy *data);
 
@@ -104,7 +105,8 @@ static CURLcode add_haproxy_protocol_header(struct Curl_easy *data);
 
 #ifdef USE_SSL
 static CURLcode https_connecting(struct Curl_easy *data, bool *done);
-static int https_getsock(struct connectdata *conn,
+static int https_getsock(struct Curl_easy *data,
+                         struct connectdata *conn,
                          curl_socket_t *socks);
 #else
 #define https_connecting(x,y) CURLE_COULDNT_CONNECT
@@ -1466,10 +1468,12 @@ CURLcode Curl_http_connect(struct Curl_easy *data, bool *done)
 /* this returns the socket to wait for in the DO and DOING state for the multi
    interface and then we're always _sending_ a request and thus we wait for
    the single socket to become writable only */
-static int http_getsock_do(struct connectdata *conn,
+static int http_getsock_do(struct Curl_easy *data,
+                           struct connectdata *conn,
                            curl_socket_t *socks)
 {
   /* write mode */
+  (void)data;
   socks[0] = conn->sock[FIRSTSOCKET];
   return GETSOCK_WRITESOCK(0);
 }
@@ -1535,9 +1539,11 @@ static CURLcode https_connecting(struct Curl_easy *data, bool *done)
   return result;
 }
 
-static int https_getsock(struct connectdata *conn,
+static int https_getsock(struct Curl_easy *data,
+                         struct connectdata *conn,
                          curl_socket_t *socks)
 {
+  (void)data;
   if(conn->handler->flags & PROTOPT_SSL)
     return Curl_ssl_getsock(conn, socks);
   return GETSOCK_BLANK;

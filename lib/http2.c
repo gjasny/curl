@@ -93,11 +93,12 @@ void Curl_http2_init_userset(struct UserDefined *set)
   set->stream_weight = NGHTTP2_DEFAULT_WEIGHT;
 }
 
-static int http2_perform_getsock(struct connectdata *conn,
-                                 curl_socket_t *sock)
+static int http2_getsock(struct Curl_easy *data,
+                         struct connectdata *conn,
+                         curl_socket_t *sock)
 {
   const struct http_conn *c = &conn->proto.httpc;
-  struct SingleRequest *k = &conn->data->req;
+  struct SingleRequest *k = &data->req;
   int bitmap = GETSOCK_BLANK;
 
   sock[0] = conn->sock[FIRSTSOCKET];
@@ -113,11 +114,6 @@ static int http2_perform_getsock(struct connectdata *conn,
     bitmap |= GETSOCK_WRITESOCK(FIRSTSOCKET);
 
   return bitmap;
-}
-
-static int http2_getsock(struct connectdata *conn, curl_socket_t *socks)
-{
-  return http2_perform_getsock(conn, socks);
 }
 
 /*
@@ -299,7 +295,7 @@ static const struct Curl_handler Curl_handler_http2 = {
   http2_getsock,                        /* proto_getsock */
   http2_getsock,                        /* doing_getsock */
   ZERO_NULL,                            /* domore_getsock */
-  http2_perform_getsock,                /* perform_getsock */
+  http2_getsock,                        /* perform_getsock */
   http2_disconnect,                     /* disconnect */
   ZERO_NULL,                            /* readwrite */
   http2_conncheck,                      /* connection_check */
@@ -321,7 +317,7 @@ static const struct Curl_handler Curl_handler_http2_ssl = {
   http2_getsock,                        /* proto_getsock */
   http2_getsock,                        /* doing_getsock */
   ZERO_NULL,                            /* domore_getsock */
-  http2_perform_getsock,                /* perform_getsock */
+  http2_getsock,                        /* perform_getsock */
   http2_disconnect,                     /* disconnect */
   ZERO_NULL,                            /* readwrite */
   http2_conncheck,                      /* connection_check */

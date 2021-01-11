@@ -159,7 +159,8 @@ static CURLcode tftp_setup_connection(struct Curl_easy *data,
                                       struct connectdata *conn);
 static CURLcode tftp_multi_statemach(struct Curl_easy *data, bool *done);
 static CURLcode tftp_doing(struct Curl_easy *data, bool *dophase_done);
-static int tftp_getsock(struct connectdata *conn, curl_socket_t *socks);
+static int tftp_getsock(struct Curl_easy *data, struct connectdata *conn,
+                        curl_socket_t *socks);
 static CURLcode tftp_translate_code(tftp_error_t error);
 
 
@@ -1109,8 +1110,10 @@ static CURLcode tftp_done(struct Curl_easy *data, CURLcode status,
  * The getsock callback
  *
  **********************************************************/
-static int tftp_getsock(struct connectdata *conn, curl_socket_t *socks)
+static int tftp_getsock(struct Curl_easy *data,
+                        struct connectdata *conn, curl_socket_t *socks)
 {
+  (void)data;
   socks[0] = conn->sock[FIRSTSOCKET];
   return GETSOCK_READSOCK(0);
 }

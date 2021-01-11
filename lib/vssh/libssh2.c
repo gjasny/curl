@@ -117,9 +117,8 @@ static CURLcode sftp_disconnect(struct Curl_easy *data,
                                 struct connectdata *conn, bool dead);
 static CURLcode sftp_perform(struct Curl_easy *data, bool *connected,
                              bool *dophase_done);
-static int ssh_getsock(struct connectdata *conn, curl_socket_t *sock);
-static int ssh_perform_getsock(struct connectdata *conn,
-                               curl_socket_t *sock);
+static int ssh_getsock(struct Curl_easy *data, struct connectdata *conn,
+                       curl_socket_t *sock);
 static CURLcode ssh_setup_connection(struct Curl_easy *data,
                                      struct connectdata *conn);
 
@@ -139,7 +138,7 @@ const struct Curl_handler Curl_handler_scp = {
   ssh_getsock,                          /* proto_getsock */
   ssh_getsock,                          /* doing_getsock */
   ZERO_NULL,                            /* domore_getsock */
-  ssh_perform_getsock,                  /* perform_getsock */
+  ssh_getsock,                          /* perform_getsock */
   scp_disconnect,                       /* disconnect */
   ZERO_NULL,                            /* readwrite */
   ZERO_NULL,                            /* connection_check */
@@ -167,7 +166,7 @@ const struct Curl_handler Curl_handler_sftp = {
   ssh_getsock,                          /* proto_getsock */
   ssh_getsock,                          /* doing_getsock */
   ZERO_NULL,                            /* domore_getsock */
-  ssh_perform_getsock,                  /* perform_getsock */
+  ssh_getsock,                          /* perform_getsock */
   sftp_disconnect,                      /* disconnect */
   ZERO_NULL,                            /* readwrite */
   ZERO_NULL,                            /* connection_check */
@@ -2872,10 +2871,12 @@ static CURLcode ssh_statemach_act(struct Curl_easy *data, bool *block)
 
 /* called by the multi interface to figure out what socket(s) to wait for and
    for what actions in the DO_DONE, PERFORM and WAITPERFORM states */
-static int ssh_perform_getsock(struct connectdata *conn,
-                               curl_socket_t *sock)
+static int ssh_getsock(struct Curl_easy *data,
+                       struct connectdata *conn,
+                       curl_socket_t *sock)
 {
   int bitmap = GETSOCK_BLANK;
+  (void)data;
 
   sock[0] = conn->sock[FIRSTSOCKET];
 
@@ -2886,16 +2887,6 @@ static int ssh_perform_getsock(struct connectdata *conn,
     bitmap |= GETSOCK_WRITESOCK(FIRSTSOCKET);
 
   return bitmap;
-}
-
-/* Generic function called by the multi interface to figure out what socket(s)
-   to wait for and for what actions during the DOING and PROTOCONNECT states*/
-static int ssh_getsock(struct connectdata *conn,
-                       curl_socket_t *sock)
-{
-  /* if we know the direction we can use the generic *_getsock() function even
-     for the protocol_connect and doing states */
-  return ssh_perform_getsock(conn, sock);
 }
 
 /*

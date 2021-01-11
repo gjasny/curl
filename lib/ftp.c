@@ -135,8 +135,10 @@ static CURLcode ftp_disconnect(struct Curl_easy *data,
                                struct connectdata *conn, bool dead_connection);
 static CURLcode ftp_do_more(struct Curl_easy *data, int *completed);
 static CURLcode ftp_multi_statemach(struct Curl_easy *data, bool *done);
-static int ftp_getsock(struct connectdata *conn, curl_socket_t *socks);
-static int ftp_domore_getsock(struct connectdata *conn, curl_socket_t *socks);
+static int ftp_getsock(struct Curl_easy *data, struct connectdata *conn,
+                       curl_socket_t *socks);
+static int ftp_domore_getsock(struct Curl_easy *data,
+                              struct connectdata *conn, curl_socket_t *socks);
 static CURLcode ftp_doing(struct Curl_easy *data,
                           bool *dophase_done);
 static CURLcode ftp_setup_connection(struct Curl_easy *data,
@@ -796,16 +798,20 @@ static CURLcode ftp_state_pwd(struct Curl_easy *data,
 }
 
 /* For the FTP "protocol connect" and "doing" phases only */
-static int ftp_getsock(struct connectdata *conn,
+static int ftp_getsock(struct Curl_easy *data,
+                       struct connectdata *conn,
                        curl_socket_t *socks)
 {
+  (void)data;
   return Curl_pp_getsock(&conn->proto.ftpc.pp, socks);
 }
 
 /* For the FTP "DO_MORE" phase only */
-static int ftp_domore_getsock(struct connectdata *conn, curl_socket_t *socks)
+static int ftp_domore_getsock(struct Curl_easy *data,
+                              struct connectdata *conn, curl_socket_t *socks)
 {
   struct ftp_conn *ftpc = &conn->proto.ftpc;
+  (void)data;
 
   /* When in DO_MORE state, we could be either waiting for us to connect to a
    * remote site, or we could wait for that site to connect to us. Or just

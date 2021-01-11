@@ -64,7 +64,8 @@ static CURLcode smb_done(struct Curl_easy *data, CURLcode status,
                          bool premature);
 static CURLcode smb_disconnect(struct Curl_easy *data,
                                struct connectdata *conn, bool dead);
-static int smb_getsock(struct connectdata *conn, curl_socket_t *socks);
+static int smb_getsock(struct Curl_easy *data, struct connectdata *conn,
+                       curl_socket_t *socks);
 static CURLcode smb_parse_url_path(struct Curl_easy *data,
                                    struct connectdata *conn);
 
@@ -957,8 +958,10 @@ static CURLcode smb_disconnect(struct Curl_easy *data,
   return CURLE_OK;
 }
 
-static int smb_getsock(struct connectdata *conn, curl_socket_t *socks)
+static int smb_getsock(struct Curl_easy *data,
+                       struct connectdata *conn, curl_socket_t *socks)
 {
+  (void)data;
   socks[0] = conn->sock[FIRSTSOCKET];
   return GETSOCK_READSOCK(0) | GETSOCK_WRITESOCK(0);
 }

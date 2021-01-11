@@ -61,7 +61,8 @@
 
 static CURLcode mqtt_do(struct Curl_easy *data, bool *done);
 static CURLcode mqtt_doing(struct Curl_easy *data, bool *done);
-static int mqtt_getsock(struct connectdata *conn, curl_socket_t *sock);
+static int mqtt_getsock(struct Curl_easy *data, struct connectdata *conn,
+                        curl_socket_t *sock);
 static CURLcode mqtt_setup_conn(struct Curl_easy *data,
                                 struct connectdata *conn);
 
@@ -132,9 +133,11 @@ static CURLcode mqtt_send(struct connectdata *conn,
 /* Generic function called by the multi interface to figure out what socket(s)
    to wait for and for what actions during the DOING and PROTOCONNECT
    states */
-static int mqtt_getsock(struct connectdata *conn,
+static int mqtt_getsock(struct Curl_easy *data,
+                        struct connectdata *conn,
                         curl_socket_t *sock)
 {
+  (void)data;
   sock[0] = conn->sock[FIRSTSOCKET];
   return GETSOCK_READSOCK(FIRSTSOCKET);
 }

@@ -938,27 +938,30 @@ static int waitproxyconnect_getsock(struct connectdata *conn,
   return GETSOCK_WRITESOCK(0);
 }
 
-static int domore_getsock(struct connectdata *conn,
+static int domore_getsock(struct Curl_easy *data,
+                          struct connectdata *conn,
                           curl_socket_t *socks)
 {
   if(conn && conn->handler->domore_getsock)
-    return conn->handler->domore_getsock(conn, socks);
+    return conn->handler->domore_getsock(data, conn, socks);
   return GETSOCK_BLANK;
 }
 
-static int doing_getsock(struct connectdata *conn,
+static int doing_getsock(struct Curl_easy *data,
+                         struct connectdata *conn,
                          curl_socket_t *socks)
 {
   if(conn && conn->handler->doing_getsock)
-    return conn->handler->doing_getsock(conn, socks);
+    return conn->handler->doing_getsock(data, conn, socks);
   return GETSOCK_BLANK;
 }
 
-static int protocol_getsock(struct connectdata *conn,
+static int protocol_getsock(struct Curl_easy *data,
+                            struct connectdata *conn,
                             curl_socket_t *socks)
 {
   if(conn->handler->proto_getsock)
-    return conn->handler->proto_getsock(conn, socks);
+    return conn->handler->proto_getsock(data, conn, socks);
   /* Backup getsock logic. Since there is a live socket in use, we must wait
      for it or it will be removed from watching when the multi_socket API is
      used. */
@@ -971,10 +974,11 @@ static int protocol_getsock(struct connectdata *conn,
 static int multi_getsock(struct Curl_easy *data,
                          curl_socket_t *socks)
 {
+  struct connectdata *conn = data->conn;
   /* The no connection case can happen when this is called from
      curl_multi_remove_handle() => singlesocket() => multi_getsock().
   */
-  if(!data->conn)
+  if(!conn)
     return 0;
 
   if(data->mstate > CURLM_STATE_CONNECT &&
@@ -988,30 +992,30 @@ static int multi_getsock(struct Curl_easy *data,
     return 0;
 
   case CURLM_STATE_WAITRESOLVE:
-    return Curl_resolv_getsock(data->conn, socks);
+    return Curl_resolv_getsock(conn, socks);
 
   case CURLM_STATE_PROTOCONNECT:
   case CURLM_STATE_SENDPROTOCONNECT:
-    return protocol_getsock(data->conn, socks);
+    return protocol_getsock(data, conn, socks);
 
   case CURLM_STATE_DO:
   case CURLM_STATE_DOING:
-    return doing_getsock(data->conn, socks);
+    return doing_getsock(data, conn, socks);
 
   case CURLM_STATE_WAITPROXYCONNECT:
-    return waitproxyconnect_getsock(data->conn, socks);
+    return waitproxyconnect_getsock(conn, socks);
 
   case CURLM_STATE_WAITCONNECT:
-    return waitconnect_getsock(data->conn, socks);
+    return waitconnect_getsock(conn, socks);
 
   case CURLM_STATE_DO_MORE:
-    return domore_getsock(data->conn, socks);
+    return domore_getsock(data, conn, socks);
 
   case CURLM_STATE_DO_DONE: /* since is set after DO is completed, we switch
                                to waiting for the same as the *PERFORM
                                states */
   case CURLM_STATE_PERFORM:
-    return Curl_single_getsock(data->conn, socks);
+    return Curl_single_getsock(data, conn, socks);
   }
 
 }

@@ -1336,15 +1336,15 @@ CURLcode Curl_readwrite(struct connectdata *conn,
  * keeps track of. This function will only be called for connections that are
  * in the proper state to have this information available.
  */
-int Curl_single_getsock(struct connectdata *conn,
+int Curl_single_getsock(struct Curl_easy *data,
+                        struct connectdata *conn,
                         curl_socket_t *sock)
 {
-  const struct Curl_easy *data = conn->data;
   int bitmap = GETSOCK_BLANK;
   unsigned sockindex = 0;
 
   if(conn->handler->perform_getsock)
-    return conn->handler->perform_getsock(conn, sock);
+    return conn->handler->perform_getsock(data, conn, sock);
 
   /* don't include HOLD and PAUSE connections */
   if((data->req.keepon & KEEP_RECVBITS) == KEEP_RECV) {
