@@ -831,7 +831,7 @@ static void post_SOCKS(struct Curl_easy *data,
   if(sockindex == FIRSTSOCKET)
     Curl_pgrsTime(data, TIMER_CONNECT); /* connect done */
   Curl_updateconninfo(data, conn, conn->sock[sockindex]);
-  Curl_verboseconnect(conn);
+  Curl_verboseconnect(data, conn);
   data->info.numconnects++; /* to track the number of connections made */
 }
 

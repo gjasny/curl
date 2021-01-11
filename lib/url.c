@@ -1470,9 +1470,10 @@ ConnectionExists(struct Curl_easy *data,
  * verboseconnect() displays verbose information after a connect
  */
 #ifndef CURL_DISABLE_VERBOSE_STRINGS
-void Curl_verboseconnect(struct connectdata *conn)
+void Curl_verboseconnect(struct Curl_easy *data,
+                         struct connectdata *conn)
 {
-  if(conn->data->set.verbose)
+  if(data->set.verbose)
     infof(conn->data, "Connected to %s (%s) port %ld (#%ld)\n",
 #ifndef CURL_DISABLE_PROXY
           conn->bits.socksproxy ? conn->socks_proxy.host.dispname :
@@ -3978,7 +3979,7 @@ CURLcode Curl_setup_conn(struct connectdata *conn,
     conn->bits.tcpconnect[FIRSTSOCKET] = TRUE;
     *protocol_done = TRUE;
     Curl_updateconninfo(data, conn, conn->sock[FIRSTSOCKET]);
-    Curl_verboseconnect(conn);
+    Curl_verboseconnect(data, conn);
   }
 
   conn->now = Curl_now(); /* time this *after* the connect is done, we set
