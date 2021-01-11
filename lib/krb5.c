@@ -2,7 +2,7 @@
  *
  * Copyright (c) 1995, 1996, 1997, 1998, 1999 Kungliga Tekniska Högskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
- * Copyright (c) 2004 - 2020 Daniel Stenberg
+ * Copyright (c) 2004 - 2021 Daniel Stenberg
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -246,7 +246,7 @@ krb5_auth(void *app_data, struct connectdata *conn)
       if(result)
         return -2;
 
-      if(Curl_GetFTPResponse(&nread, conn, NULL))
+      if(Curl_GetFTPResponse(data, &nread, NULL))
         return -1;
 
       if(data->state.buffer[0] != '3')
@@ -331,7 +331,7 @@ krb5_auth(void *app_data, struct connectdata *conn)
           break;
         }
 
-        if(Curl_GetFTPResponse(&nread, conn, NULL)) {
+        if(Curl_GetFTPResponse(data, &nread, NULL)) {
           ret = -1;
           break;
         }
@@ -443,7 +443,7 @@ static char level_to_char(int level)
 
 /* Send an FTP command defined by |message| and the optional arguments. The
    function returns the ftp_code. If an error occurs, -1 is returned. */
-static int ftp_send_command(struct connectdata *conn, const char *message, ...)
+static int ftp_send_command(struct Curl_easy *data, const char *message, ...)
 {
   int ftp_code;
   ssize_t nread = 0;
@@ -454,11 +454,11 @@ static int ftp_send_command(struct connectdata *conn, const char *message, ...)
   mvsnprintf(print_buffer, sizeof(print_buffer), message, args);
   va_end(args);
 
-  if(ftpsend(conn, print_buffer)) {
+  if(ftpsend(data->conn, print_buffer)) {
     ftp_code = -1;
   }
   else {
-    if(Curl_GetFTPResponse(&nread, conn, &ftp_code))
+    if(Curl_GetFTPResponse(data, &nread, &ftp_code))
       ftp_code = -1;
   }
 
@@ -736,9 +736,10 @@ int Curl_sec_read_msg(struct connectdata *conn, char *buffer,
   return ret_code;
 }
 
-static int sec_set_protection_level(struct connectdata *conn)
+static int sec_set_protection_level(struct Curl_easy *data)
 {
   int code;
+  struct connectdata *conn = data->conn;
   enum protection_level level = conn->request_data_prot;
 
   DEBUGASSERT(level > PROT_NONE && level < PROT_LAST);
@@ -757,7 +758,7 @@ static int sec_set_protection_level(struct connectdata *conn)
     char *pbsz;
     static unsigned int buffer_size = 1 << 20; /* 1048576 */
 
-    code = ftp_send_command(conn, "PBSZ %u", buffer_size);
+    code = ftp_send_command(data, "PBSZ %u", buffer_size);
     if(code < 0)
       return -1;
 
@@ -767,7 +768,7 @@ static int sec_set_protection_level(struct connectdata *conn)
     }
     conn->buffer_size = buffer_size;
 
-    pbsz = strstr(conn->data->state.buffer, "PBSZ=");
+    pbsz = strstr(data->state.buffer, "PBSZ=");
     if(pbsz) {
       /* ignore return code, use default value if it fails */
       (void)sscanf(pbsz, "PBSZ=%u", &buffer_size);
@@ -776,8 +777,8 @@ static int sec_set_protection_level(struct connectdata *conn)
     }
   }
 
-  /* Now try to negotiate the protection level. */
-  code = ftp_send_command(conn, "PROT %c", level_to_char(level));
+  /* Now try to negiociate the protection level. */
+  code = ftp_send_command(data, "PROT %c", level_to_char(level));
 
   if(code < 0)
     return -1;
@@ -830,7 +831,7 @@ static CURLcode choose_mech(struct connectdata *conn)
   }
 
   infof(data, "Trying mechanism %s...\n", mech->name);
-  ret = ftp_send_command(conn, "AUTH %s", mech->name);
+  ret = ftp_send_command(data, "AUTH %s", mech->name);
   if(ret < 0)
     return CURLE_COULDNT_CONNECT;
 
@@ -873,7 +874,7 @@ static CURLcode choose_mech(struct connectdata *conn)
     conn->command_prot = PROT_SAFE;
     /* Set the requested protection level */
     /* BLOCKING */
-    (void)sec_set_protection_level(conn);
+    (void)sec_set_protection_level(data);
   }
 
   return CURLE_OK;
