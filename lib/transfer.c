@@ -93,12 +93,11 @@
  *
  * Returns a pointer to the first matching header or NULL if none matched.
  */
-char *Curl_checkheaders(const struct connectdata *conn,
+char *Curl_checkheaders(const struct Curl_easy *data,
                         const char *thisheader)
 {
   struct curl_slist *head;
   size_t thislen = strlen(thisheader);
-  struct Curl_easy *data = conn->data;
 
   for(head = data->set.headers; head; head = head->next) {
     if(strncasecompare(head->data, thisheader, thislen) &&

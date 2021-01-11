@@ -758,7 +758,7 @@ static CURLcode imap_perform_append(struct Curl_easy *data)
                                        NULL, MIMESTRATEGY_MAIL);
 
     if(!result)
-      if(!Curl_checkheaders(conn, "Mime-Version"))
+      if(!Curl_checkheaders(data, "Mime-Version"))
         result = Curl_mime_add_header(&data->set.mimepost.curlheaders,
                                       "Mime-Version: 1.0");
 

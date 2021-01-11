@@ -681,11 +681,11 @@ CURLcode Curl_http(struct Curl_easy *data, bool *done)
   if(result)
     return result;
 
-  result = Curl_http_range(data, conn, httpreq);
+  result = Curl_http_range(data, httpreq);
   if(result)
     return result;
 
-  result = Curl_http_useragent(data, conn);
+  result = Curl_http_useragent(data);
   if(result)
     return result;
 

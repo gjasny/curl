@@ -184,7 +184,8 @@ static void connect_done(struct connectdata *conn)
   infof(conn->data, "CONNECT phase completed!\n");
 }
 
-static CURLcode CONNECT_host(struct connectdata *conn,
+static CURLcode CONNECT_host(struct Curl_easy *data,
+                             struct connectdata *conn,
                              const char *hostname,
                              int remote_port,
                              char **connecthostp,
@@ -203,7 +204,7 @@ static CURLcode CONNECT_host(struct connectdata *conn,
   if(!hostheader)
     return CURLE_OUT_OF_MEMORY;
 
-  if(!Curl_checkProxyheaders(conn, "Host")) {
+  if(!Curl_checkProxyheaders(data, conn, "Host")) {
     host = aprintf("Host: %s\r\n", hostheader);
     if(!host) {
       free(hostheader);
@@ -258,12 +259,13 @@ static CURLcode CONNECT(struct connectdata *conn,
       /* initialize a dynamic send-buffer */
       Curl_dyn_init(&req, DYN_HTTP_REQUEST);
 
-      result = CONNECT_host(conn, hostname, remote_port, &hostheader, &host);
+      result = CONNECT_host(data, conn,
+                            hostname, remote_port, &hostheader, &host);
       if(result)
         return result;
 
       /* Setup the proxy-authorization header, if any */
-      result = Curl_http_output_auth(conn, "CONNECT", HTTPREQ_GET,
+      result = Curl_http_output_auth(data, conn, "CONNECT", HTTPREQ_GET,
                                      hostheader, TRUE);
 
       if(!result) {
@@ -272,10 +274,10 @@ static CURLcode CONNECT(struct connectdata *conn,
         const char *httpv =
           (conn->http_proxy.proxytype == CURLPROXY_HTTP_1_0) ? "1.0" : "1.1";
 
-        if(!Curl_checkProxyheaders(conn, "Proxy-Connection"))
+        if(!Curl_checkProxyheaders(data, conn, "Proxy-Connection"))
           proxyconn = "Proxy-Connection: Keep-Alive\r\n";
 
-        if(!Curl_checkProxyheaders(conn, "User-Agent") &&
+        if(!Curl_checkProxyheaders(data, conn, "User-Agent") &&
            data->set.str[STRING_USERAGENT])
           useragent = data->state.aptr.uagent;
 
@@ -295,7 +297,7 @@ static CURLcode CONNECT(struct connectdata *conn,
                         proxyconn);
 
         if(!result)
-          result = Curl_add_custom_headers(conn, TRUE, &req);
+          result = Curl_add_custom_headers(data, TRUE, &req);
 
         if(!result)
           /* CRLF terminate the request */
@@ -304,7 +306,7 @@ static CURLcode CONNECT(struct connectdata *conn,
         if(!result) {
           /* Send the connect request to the proxy */
           /* BLOCKING */
-          result = Curl_buffer_send(&req, conn, &data->info.request_size, 0,
+          result = Curl_buffer_send(&req, data, &data->info.request_size, 0,
                                     sockindex);
         }
         if(result)
@@ -508,7 +510,7 @@ static CURLcode CONNECT(struct connectdata *conn,
           if(!auth)
             return CURLE_OUT_OF_MEMORY;
 
-          result = Curl_http_input_auth(conn, proxy, auth);
+          result = Curl_http_input_auth(data, proxy, auth);
 
           free(auth);
 
@@ -567,7 +569,7 @@ static CURLcode CONNECT(struct connectdata *conn,
       if(data->info.httpproxycode/100 != 2) {
         /* Deal with the possibly already received authenticate
            headers. 'newurl' is set to a new URL if we must loop. */
-        result = Curl_http_auth_act(conn);
+        result = Curl_http_auth_act(data);
         if(result)
           return result;
 

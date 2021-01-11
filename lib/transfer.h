@@ -23,7 +23,7 @@
  ***************************************************************************/
 
 #define Curl_headersep(x) ((((x)==':') || ((x)==';')))
-char *Curl_checkheaders(const struct connectdata *conn,
+char *Curl_checkheaders(const struct Curl_easy *data,
                         const char *thisheader);
 
 void Curl_init_CONNECT(struct Curl_easy *data);
