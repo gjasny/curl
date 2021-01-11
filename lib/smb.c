@@ -293,8 +293,9 @@ static CURLcode smb_connect(struct Curl_easy *data, bool *done)
   return CURLE_OK;
 }
 
-static CURLcode smb_recv_message(struct connectdata *conn, void **msg)
+static CURLcode smb_recv_message(struct Curl_easy *data, void **msg)
 {
+  struct connectdata *conn = data->conn;
   struct smb_conn *smbc = &conn->proto.smbc;
   char *buf = smbc->recv_buf;
   ssize_t bytes_read;
@@ -303,7 +304,7 @@ static CURLcode smb_recv_message(struct connectdata *conn, void **msg)
   size_t len = MAX_MESSAGE_SIZE - smbc->got;
   CURLcode result;
 
-  result = Curl_read(conn, FIRSTSOCKET, buf + smbc->got, len, &bytes_read);
+  result = Curl_read(data, FIRSTSOCKET, buf + smbc->got, len, &bytes_read);
   if(result)
     return result;
 
@@ -377,7 +378,7 @@ static CURLcode smb_send(struct Curl_easy *data, ssize_t len,
   ssize_t bytes_written;
   CURLcode result;
 
-  result = Curl_write(conn, FIRSTSOCKET, data->state.ulbuf,
+  result = Curl_write(data, FIRSTSOCKET, data->state.ulbuf,
                       len, &bytes_written);
   if(result)
     return result;
@@ -403,7 +404,7 @@ static CURLcode smb_flush(struct Curl_easy *data)
   if(!smbc->send_size)
     return CURLE_OK;
 
-  result = Curl_write(conn, FIRSTSOCKET,
+  result = Curl_write(data, FIRSTSOCKET,
                       data->state.ulbuf + smbc->sent,
                       len, &bytes_written);
   if(result)
@@ -651,7 +652,7 @@ static CURLcode smb_send_and_recv(struct Curl_easy *data, void **msg)
   if(smbc->send_size || smbc->upload_size)
     return CURLE_AGAIN;
 
-  return smb_recv_message(conn, msg);
+  return smb_recv_message(data, msg);
 }
 
 static CURLcode smb_connection_state(struct Curl_easy *data, bool *done)

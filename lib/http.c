@@ -1270,7 +1270,7 @@ CURLcode Curl_buffer_send(struct dynbuf *in,
     sendsize = size;
   }
 
-  result = Curl_write(conn, sockfd, ptr, sendsize, &amount);
+  result = Curl_write(data, sockfd, ptr, sendsize, &amount);
 
   if(!result) {
     /*

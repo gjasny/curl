@@ -115,7 +115,7 @@ static CURLcode mqtt_send(struct connectdata *conn,
   struct Curl_easy *data = conn->data;
   struct MQTT *mq = data->req.p.mqtt;
   ssize_t n;
-  result = Curl_write(conn, sockfd, buf, len, &n);
+  result = Curl_write(data, sockfd, buf, len, &n);
   if(!result)
     Curl_debug(data, CURLINFO_HEADER_OUT, buf, (size_t)n);
   if(len != (size_t)n) {
@@ -183,7 +183,7 @@ static CURLcode mqtt_verify_connack(struct connectdata *conn)
   ssize_t nread;
   struct Curl_easy *data = conn->data;
 
-  result = Curl_read(conn, sockfd, (char *)readbuf, MQTT_CONNACK_LEN, &nread);
+  result = Curl_read(data, sockfd, (char *)readbuf, MQTT_CONNACK_LEN, &nread);
   if(result)
     goto fail;
 
@@ -287,15 +287,16 @@ fail:
 /*
  * Called when the first byte was already read.
  */
-static CURLcode mqtt_verify_suback(struct connectdata *conn)
+static CURLcode mqtt_verify_suback(struct Curl_easy *data)
 {
   CURLcode result;
+  struct connectdata *conn = data->conn;
   curl_socket_t sockfd = conn->sock[FIRSTSOCKET];
   unsigned char readbuf[MQTT_SUBACK_LEN];
   ssize_t nread;
   struct mqtt_conn *mqtt = &conn->proto.mqtt;
 
-  result = Curl_read(conn, sockfd, (char *)readbuf, MQTT_SUBACK_LEN, &nread);
+  result = Curl_read(data, sockfd, (char *)readbuf, MQTT_SUBACK_LEN, &nread);
   if(result)
     goto fail;
 
@@ -441,7 +442,7 @@ static CURLcode mqtt_read_publish(struct connectdata *conn,
   switch(mqtt->state) {
   MQTT_SUBACK_COMING:
   case MQTT_SUBACK_COMING:
-    result = mqtt_verify_suback(conn);
+    result = mqtt_verify_suback(data);
     if(result)
       break;
 
@@ -482,7 +483,7 @@ static CURLcode mqtt_read_publish(struct connectdata *conn,
     size_t rest = mq->npacket;
     if(rest > (size_t)data->set.buffer_size)
       rest = (size_t)data->set.buffer_size;
-    result = Curl_read(conn, sockfd, (char *)pkt, rest, &nread);
+    result = Curl_read(data, sockfd, (char *)pkt, rest, &nread);
     if(result) {
       if(CURLE_AGAIN == result) {
         infof(data, "EEEE AAAAGAIN\n");
@@ -562,7 +563,7 @@ static CURLcode mqtt_doing(struct Curl_easy *data, bool *done)
   switch(mqtt->state) {
   case MQTT_FIRST:
     /* Read the initial byte only */
-    result = Curl_read(conn, sockfd, (char *)&mq->firstbyte, 1, &nread);
+    result = Curl_read(data, sockfd, (char *)&mq->firstbyte, 1, &nread);
     if(!nread)
       break;
     Curl_debug(data, CURLINFO_HEADER_IN, (char *)&mq->firstbyte, 1);
@@ -572,7 +573,7 @@ static CURLcode mqtt_doing(struct Curl_easy *data, bool *done)
     /* FALLTHROUGH */
   case MQTT_REMAINING_LENGTH:
     do {
-      result = Curl_read(conn, sockfd, (char *)&byte, 1, &nread);
+      result = Curl_read(data, sockfd, (char *)&byte, 1, &nread);
       if(!nread)
         break;
       Curl_debug(data, CURLINFO_HEADER_IN, (char *)&byte, 1);

@@ -1403,7 +1403,7 @@ static CURLcode smtp_done(struct Curl_easy *data, CURLcode status,
       return CURLE_OUT_OF_MEMORY;
 
     /* Send the end of block data */
-    result = Curl_write(conn, conn->writesockfd, eob, len, &bytes_written);
+    result = Curl_write(data, conn->writesockfd, eob, len, &bytes_written);
     if(result) {
       free(eob);
       return result;

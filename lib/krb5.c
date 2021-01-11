@@ -89,7 +89,7 @@ static CURLcode ftpsend(struct connectdata *conn, const char *cmd)
 #ifdef HAVE_GSSAPI
     conn->data_prot = PROT_CMD;
 #endif
-    result = Curl_write(conn, conn->sock[FIRSTSOCKET], sptr, write_len,
+    result = Curl_write(conn->data, conn->sock[FIRSTSOCKET], sptr, write_len,
                         &bytes_written);
 #ifdef HAVE_GSSAPI
     DEBUGASSERT(data_sec > PROT_NONE && data_sec < PROT_LAST);

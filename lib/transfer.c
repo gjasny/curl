@@ -598,7 +598,7 @@ static CURLcode readwrite_data(struct Curl_easy *data,
 
     if(bytestoread) {
       /* receive data from the network! */
-      result = Curl_read(conn, conn->sockfd, buf, bytestoread, &nread);
+      result = Curl_read(data, conn->sockfd, buf, bytestoread, &nread);
 
       /* read would've blocked */
       if(CURLE_AGAIN == result)
@@ -1091,7 +1091,7 @@ static CURLcode readwrite_upload(struct Curl_easy *data,
     }
 
     /* write to socket (send away data) */
-    result = Curl_write(conn,
+    result = Curl_write(data,
                         conn->writesockfd,  /* socket to send to */
                         k->upload_fromhere, /* buffer pointer */
                         k->upload_present,  /* buffer size */

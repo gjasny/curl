@@ -342,7 +342,7 @@ static CURLcode CONNECT(struct connectdata *conn,
 
         /* Read one byte at a time to avoid a race condition. Wait at most one
            second before looping to ensure continuous pgrsUpdates. */
-        result = Curl_read(conn, tunnelsocket, &byte, 1, &gotbytes);
+        result = Curl_read(data, tunnelsocket, &byte, 1, &gotbytes);
         if(result == CURLE_AGAIN)
           /* socket buffer drained, return */
           return CURLE_OK;

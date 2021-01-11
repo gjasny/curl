@@ -1157,7 +1157,7 @@ CURLcode curl_easy_recv(struct Curl_easy *data, void *buffer, size_t buflen,
     return result;
 
   *n = 0;
-  result = Curl_read(c, sfd, buffer, buflen, &n1);
+  result = Curl_read(data, sfd, buffer, buflen, &n1);
 
   if(result)
     return result;
@@ -1187,7 +1187,7 @@ CURLcode curl_easy_send(struct Curl_easy *data, const void *buffer,
     return result;
 
   *n = 0;
-  result = Curl_write(c, sfd, buffer, buflen, &n1);
+  result = Curl_write(data, sfd, buffer, buflen, &n1);
 
   if(n1 == -1)
     return CURLE_SEND_ERROR;

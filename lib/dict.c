@@ -129,10 +129,9 @@ static char *unescape_word(struct Curl_easy *data, const char *inputbuff)
 }
 
 /* sendf() sends formatted data to the server */
-static CURLcode sendf(curl_socket_t sockfd, struct connectdata *conn,
+static CURLcode sendf(curl_socket_t sockfd, struct Curl_easy *data,
                       const char *fmt, ...)
 {
-  struct Curl_easy *data = conn->data;
   ssize_t bytes_written;
   size_t write_len;
   CURLcode result = CURLE_OK;
@@ -151,7 +150,7 @@ static CURLcode sendf(curl_socket_t sockfd, struct connectdata *conn,
 
   for(;;) {
     /* Write the buffer to the socket */
-    result = Curl_write(conn, sockfd, sptr, write_len, &bytes_written);
+    result = Curl_write(data, sockfd, sptr, write_len, &bytes_written);
 
     if(result)
       break;
@@ -230,7 +229,7 @@ static CURLcode dict_do(struct Curl_easy *data, bool *done)
     if(!eword)
       return CURLE_OUT_OF_MEMORY;
 
-    result = sendf(sockfd, conn,
+    result = sendf(sockfd, data,
                    "CLIENT " LIBCURL_NAME " " LIBCURL_VERSION "\r\n"
                    "MATCH "
                    "%s "    /* database */
@@ -278,7 +277,7 @@ static CURLcode dict_do(struct Curl_easy *data, bool *done)
     if(!eword)
       return CURLE_OUT_OF_MEMORY;
 
-    result = sendf(sockfd, conn,
+    result = sendf(sockfd, data,
                    "CLIENT " LIBCURL_NAME " " LIBCURL_VERSION "\r\n"
                    "DEFINE "
                    "%s "     /* database */
@@ -306,7 +305,7 @@ static CURLcode dict_do(struct Curl_easy *data, bool *done)
         if(ppath[i] == ':')
           ppath[i] = ' ';
       }
-      result = sendf(sockfd, conn,
+      result = sendf(sockfd, data,
                      "CLIENT " LIBCURL_NAME " " LIBCURL_VERSION "\r\n"
                      "%s\r\n"
                      "QUIT\r\n", ppath);

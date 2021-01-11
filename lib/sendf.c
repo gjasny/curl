@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -293,7 +293,7 @@ void Curl_failf(struct Curl_easy *data, const char *fmt, ...)
  * If the write would block (CURLE_AGAIN), we return CURLE_OK and
  * (*written == 0). Otherwise we return regular CURLcode value.
  */
-CURLcode Curl_write(struct connectdata *conn,
+CURLcode Curl_write(struct Curl_easy *data,
                     curl_socket_t sockfd,
                     const void *mem,
                     size_t len,
@@ -301,6 +301,7 @@ CURLcode Curl_write(struct connectdata *conn,
 {
   ssize_t bytes_written;
   CURLcode result = CURLE_OK;
+  struct connectdata *conn = data->conn;
   int num = (sockfd == conn->sock[SECONDARYSOCKET]);
 
   bytes_written = conn->send[num](conn, num, mem, len, &result);
@@ -658,7 +659,7 @@ CURLcode Curl_read_plain(curl_socket_t sockfd,
  *
  * Returns a regular CURLcode value.
  */
-CURLcode Curl_read(struct connectdata *conn, /* connection data */
+CURLcode Curl_read(struct Curl_easy *data,   /* transfer */
                    curl_socket_t sockfd,     /* read from this socket */
                    char *buf,                /* store read data here */
                    size_t sizerequested,     /* max amount to read */
@@ -668,7 +669,7 @@ CURLcode Curl_read(struct connectdata *conn, /* connection data */
   ssize_t nread = 0;
   size_t bytesfromsocket = 0;
   char *buffertofill = NULL;
-  struct Curl_easy *data = conn->data;
+  struct connectdata *conn = data->conn;
 
   /* Set 'num' to 0 or 1, depending on which socket that has been sent here.
      If it is the second socket, we set num to 1. Otherwise to 0. This lets

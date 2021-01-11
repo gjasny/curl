@@ -3022,7 +3022,7 @@ static ssize_t ssh_tls_recv(libssh2_socket_t sock, void *buffer,
   /* swap in the TLS reader function for this call only, and then swap back
      the SSH one again */
   conn->recv[0] = ssh->tls_recv;
-  result = Curl_read(conn, sock, buffer, length, &nread);
+  result = Curl_read(conn->data, sock, buffer, length, &nread);
   conn->recv[0] = backup;
   if(result == CURLE_AGAIN)
     return -EAGAIN; /* magic return code for libssh2 */
@@ -3045,7 +3045,7 @@ static ssize_t ssh_tls_send(libssh2_socket_t sock, const void *buffer,
   /* swap in the TLS writer function for this call only, and then swap back
      the SSH one again */
   conn->send[0] = ssh->tls_send;
-  result = Curl_write(conn, sock, buffer, length, &nwrite);
+  result = Curl_write(conn->data, sock, buffer, length, &nwrite);
   conn->send[0] = backup;
   if(result == CURLE_AGAIN)
     return -EAGAIN; /* magic return code for libssh2 */
