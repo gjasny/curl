@@ -65,7 +65,7 @@ CURLcode Curl_http2_stream_pause(struct Curl_easy *data, bool pause);
 bool Curl_h2_http_1_1_error(struct connectdata *conn);
 #else /* USE_NGHTTP2 */
 #define Curl_http2_request_upgrade(x,y) CURLE_UNSUPPORTED_PROTOCOL
-#define Curl_http2_setup(x) CURLE_UNSUPPORTED_PROTOCOL
+#define Curl_http2_setup(x,y) CURLE_UNSUPPORTED_PROTOCOL
 #define Curl_http2_switched(x,y,z) CURLE_UNSUPPORTED_PROTOCOL
 #define Curl_http2_setup_conn(x) Curl_nop_stmt
 #define Curl_http2_setup_req(x)

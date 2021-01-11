@@ -90,7 +90,7 @@ struct h3out {
 static CURLcode ng_process_ingress(struct connectdata *conn,
                                    curl_socket_t sockfd,
                                    struct quicsocket *qs);
-static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
+static CURLcode ng_flush_egress(struct Curl_easy *data, int sockfd,
                                 struct quicsocket *qs);
 static int cb_h3_acked_stream_data(nghttp3_conn *conn, int64_t stream_id,
                                    size_t datalen, void *user_data,
@@ -1238,7 +1238,8 @@ static ssize_t ngh3_stream_recv(struct connectdata *conn,
                                 CURLcode *curlcode)
 {
   curl_socket_t sockfd = conn->sock[sockindex];
-  struct HTTP *stream = conn->data->req.p.http;
+  struct Curl_easy *data = conn->data;
+  struct HTTP *stream = data->req.p.http;
   struct quicsocket *qs = conn->quic;
 
   if(!stream->memlen) {
@@ -1257,7 +1258,7 @@ static ssize_t ngh3_stream_recv(struct connectdata *conn,
     *curlcode = CURLE_RECV_ERROR;
     return -1;
   }
-  if(ng_flush_egress(conn, sockfd, qs)) {
+  if(ng_flush_egress(data, sockfd, qs)) {
     *curlcode = CURLE_SEND_ERROR;
     return -1;
   }
@@ -1273,7 +1274,7 @@ static ssize_t ngh3_stream_recv(struct connectdata *conn,
     /* extend the stream window with the data we're consuming and send out
        any additional packets to tell the server that we can receive more */
     extend_stream_window(qs->qconn, stream);
-    if(ng_flush_egress(conn, sockfd, qs)) {
+    if(ng_flush_egress(data, sockfd, qs)) {
       *curlcode = CURLE_SEND_ERROR;
       return -1;
     }
@@ -1285,7 +1286,7 @@ static ssize_t ngh3_stream_recv(struct connectdata *conn,
     return 0;
   }
 
-  infof(conn->data, "ngh3_stream_recv returns 0 bytes and EAGAIN\n");
+  infof(data, "ngh3_stream_recv returns 0 bytes and EAGAIN\n");
   *curlcode = CURLE_AGAIN;
   return -1;
 }
@@ -1378,10 +1379,11 @@ static ssize_t cb_h3_readfunction(nghttp3_conn *conn, int64_t stream_id,
    field list. */
 #define AUTHORITY_DST_IDX 3
 
-static CURLcode http_request(struct connectdata *conn, const void *mem,
+static CURLcode http_request(struct Curl_easy *data, const void *mem,
                              size_t len)
 {
-  struct HTTP *stream = conn->data->req.p.http;
+  struct connectdata *conn = data->conn;
+  struct HTTP *stream = data->req.p.http;
   size_t nheader;
   size_t i;
   size_t authority_idx;
@@ -1389,7 +1391,6 @@ static CURLcode http_request(struct connectdata *conn, const void *mem,
   char *end, *line_end;
   struct quicsocket *qs = conn->quic;
   CURLcode result = CURLE_OK;
-  struct Curl_easy *data = conn->data;
   nghttp3_nv *nva = NULL;
   int64_t stream3_id;
   int rc;
@@ -1397,7 +1398,7 @@ static CURLcode http_request(struct connectdata *conn, const void *mem,
 
   rc = ngtcp2_conn_open_bidi_stream(qs->qconn, &stream3_id, NULL);
   if(rc) {
-    failf(conn->data, "can get bidi streams");
+    failf(data, "can get bidi streams");
     result = CURLE_SEND_ERROR;
     goto fail;
   }
@@ -1583,8 +1584,7 @@ static CURLcode http_request(struct connectdata *conn, const void *mem,
     stream->h3out = h3out;
 
     rc = nghttp3_conn_submit_request(qs->h3conn, stream->stream3_id,
-                                     nva, nheader, &data_reader,
-                                     conn->data);
+                                     nva, nheader, &data_reader, data);
     if(rc) {
       result = CURLE_SEND_ERROR;
       goto fail;
@@ -1594,9 +1594,7 @@ static CURLcode http_request(struct connectdata *conn, const void *mem,
   default:
     stream->upload_left = 0; /* nothing left to send */
     rc = nghttp3_conn_submit_request(qs->h3conn, stream->stream3_id,
-                                     nva, nheader,
-                                     NULL, /* no body! */
-                                     conn->data);
+                                     nva, nheader, NULL, data);
     if(rc) {
       result = CURLE_SEND_ERROR;
       goto fail;
@@ -1624,10 +1622,11 @@ static ssize_t ngh3_stream_send(struct connectdata *conn,
   ssize_t sent;
   struct quicsocket *qs = conn->quic;
   curl_socket_t sockfd = conn->sock[sockindex];
-  struct HTTP *stream = conn->data->req.p.http;
+  struct Curl_easy *data = conn->data;
+  struct HTTP *stream = data->req.p.http;
 
   if(!stream->h3req) {
-    CURLcode result = http_request(conn, mem, len);
+    CURLcode result = http_request(data, mem, len);
     if(result) {
       *curlcode = CURLE_SEND_ERROR;
       return -1;
@@ -1635,7 +1634,7 @@ static ssize_t ngh3_stream_send(struct connectdata *conn,
     sent = len;
   }
   else {
-    H3BUGF(infof(conn->data, "ngh3_stream_send() wants to send %zd bytes\n",
+    H3BUGF(infof(data, "ngh3_stream_send() wants to send %zd bytes\n",
                  len));
     if(!stream->upload_len) {
       stream->upload_mem = mem;
@@ -1649,7 +1648,7 @@ static ssize_t ngh3_stream_send(struct connectdata *conn,
     }
   }
 
-  if(ng_flush_egress(conn, sockfd, qs)) {
+  if(ng_flush_egress(data, sockfd, qs)) {
     *curlcode = CURLE_SEND_ERROR;
     return -1;
   }
@@ -1685,7 +1684,7 @@ CURLcode Curl_quic_is_connected(struct connectdata *conn,
   if(result)
     goto error;
 
-  result = ng_flush_egress(conn, sockfd, qs);
+  result = ng_flush_egress(conn->data, sockfd, qs);
   if(result)
     goto error;
 
@@ -1745,7 +1744,8 @@ static CURLcode ng_process_ingress(struct connectdata *conn,
   return CURLE_OK;
 }
 
-static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
+static CURLcode ng_flush_egress(struct Curl_easy *data,
+                                int sockfd,
                                 struct quicsocket *qs)
 {
   int rv;
@@ -1779,7 +1779,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
 
   rv = ngtcp2_conn_handle_expiry(qs->qconn, ts);
   if(rv != 0) {
-    failf(conn->data, "ngtcp2_conn_handle_expiry returned error: %s",
+    failf(data, "ngtcp2_conn_handle_expiry returned error: %s",
           ngtcp2_strerror(rv));
     return CURLE_SEND_ERROR;
   }
@@ -1792,7 +1792,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
       veccnt = nghttp3_conn_writev_stream(qs->h3conn, &stream_id, &fin, vec,
                                           sizeof(vec) / sizeof(vec[0]));
       if(veccnt < 0) {
-        failf(conn->data, "nghttp3_conn_writev_stream returned error: %s",
+        failf(data, "nghttp3_conn_writev_stream returned error: %s",
               nghttp3_strerror((int)veccnt));
         return CURLE_SEND_ERROR;
       }
@@ -1813,7 +1813,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
             assert(ndatalen == -1);
             rv = nghttp3_conn_block_stream(qs->h3conn, stream_id);
             if(rv != 0) {
-              failf(conn->data,
+              failf(data,
                     "nghttp3_conn_block_stream returned error: %s\n",
                     nghttp3_strerror(rv));
               return CURLE_SEND_ERROR;
@@ -1825,7 +1825,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
             rv = nghttp3_conn_add_write_offset(qs->h3conn, stream_id,
                                                ndatalen);
             if(rv != 0) {
-              failf(conn->data,
+              failf(data,
                     "nghttp3_conn_add_write_offset returned error: %s\n",
                     nghttp3_strerror(rv));
               return CURLE_SEND_ERROR;
@@ -1834,7 +1834,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
           }
           else {
             assert(ndatalen == -1);
-            failf(conn->data, "ngtcp2_conn_writev_stream returned error: %s",
+            failf(data, "ngtcp2_conn_writev_stream returned error: %s",
                   ngtcp2_strerror((int)outlen));
             return CURLE_SEND_ERROR;
           }
@@ -1848,7 +1848,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
       outlen = ngtcp2_conn_write_pkt(qs->qconn, &ps.path, NULL,
                                      out, pktlen, ts);
       if(outlen < 0) {
-        failf(conn->data, "ngtcp2_conn_write_pkt returned error: %s",
+        failf(data, "ngtcp2_conn_write_pkt returned error: %s",
               ngtcp2_strerror((int)outlen));
         return CURLE_SEND_ERROR;
       }
@@ -1867,7 +1867,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
         break;
       }
       else {
-        failf(conn->data, "send() returned %zd (errno %d)", sent,
+        failf(data, "send() returned %zd (errno %d)", sent,
               SOCKERRNO);
         return CURLE_SEND_ERROR;
       }
@@ -1882,7 +1882,7 @@ static CURLcode ng_flush_egress(struct connectdata *conn, int sockfd,
     else {
       timeout = expiry - ts;
     }
-    Curl_expire(conn->data, timeout / NGTCP2_MILLISECONDS, EXPIRE_QUIC);
+    Curl_expire(data, timeout / NGTCP2_MILLISECONDS, EXPIRE_QUIC);
   }
 
   return CURLE_OK;
