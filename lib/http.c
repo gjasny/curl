@@ -2930,7 +2930,7 @@ CURLcode Curl_http(struct Curl_easy *data, bool *done)
       case CURL_HTTP_VERSION_2:
         conn->httpversion = 20; /* we know we're on HTTP/2 now */
 
-        result = Curl_http2_switched(conn, NULL, 0);
+        result = Curl_http2_switched(data, NULL, 0);
         if(result)
           return result;
         break;
@@ -2952,7 +2952,7 @@ CURLcode Curl_http(struct Curl_easy *data, bool *done)
           DEBUGF(infof(data, "HTTP/2 over clean TCP\n"));
           conn->httpversion = 20;
 
-          result = Curl_http2_switched(conn, NULL, 0);
+          result = Curl_http2_switched(data, NULL, 0);
           if(result)
             return result;
         }
@@ -2962,7 +2962,7 @@ CURLcode Curl_http(struct Curl_easy *data, bool *done)
     }
     else {
       /* prepare for a http2 request */
-      result = Curl_http2_setup(conn);
+      result = Curl_http2_setup(data, conn);
       if(result)
         return result;
     }
@@ -3851,7 +3851,7 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
 
             /* switch to http2 now. The bytes after response headers
                are also processed here, otherwise they are lost. */
-            result = Curl_http2_switched(conn, k->str, *nread);
+            result = Curl_http2_switched(data, k->str, *nread);
             if(result)
               return result;
             *nread = 0;
@@ -3989,7 +3989,7 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
                 data->state.disableexpect = TRUE;
                 DEBUGASSERT(!data->req.newurl);
                 data->req.newurl = strdup(data->change.url);
-                Curl_done_sending(conn, k);
+                Curl_done_sending(data, conn, k);
               }
               else if(data->set.http_keep_sending_on_error) {
                 infof(data, "HTTP error before end of send, keep sending\n");
@@ -4001,7 +4001,7 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
               else {
                 infof(data, "HTTP error before end of send, stop sending\n");
                 streamclose(conn, "Stop sending data before everything sent");
-                result = Curl_done_sending(conn, k);
+                result = Curl_done_sending(data, conn, k);
                 if(result)
                   return result;
                 k->upload_done = TRUE;
