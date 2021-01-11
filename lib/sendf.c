@@ -389,19 +389,17 @@ ssize_t Curl_send_plain(struct Curl_easy *data, int num,
  * server using plain sockets only. Otherwise meant to have the exact same
  * proto as Curl_write()
  */
-CURLcode Curl_write_plain(struct connectdata *conn,
+CURLcode Curl_write_plain(struct Curl_easy *data,
                           curl_socket_t sockfd,
                           const void *mem,
                           size_t len,
                           ssize_t *written)
 {
-  ssize_t bytes_written;
   CURLcode result;
+  struct connectdata *conn = data->conn;
   int num = (sockfd == conn->sock[SECONDARYSOCKET]);
 
-  bytes_written = Curl_send_plain(conn->data, num, mem, len, &result);
-
-  *written = bytes_written;
+  *written = Curl_send_plain(data, num, mem, len, &result);
 
   return result;
 }

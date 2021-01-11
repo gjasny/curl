@@ -503,7 +503,7 @@ socket_write(struct connectdata *conn, curl_socket_t fd, const void *to,
   ssize_t written;
 
   while(len > 0) {
-    result = Curl_write_plain(conn, fd, to_p, len, &written);
+    result = Curl_write_plain(conn->data, fd, to_p, len, &written);
     if(!result) {
       len -= written;
       to_p += written;

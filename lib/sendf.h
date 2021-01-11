@@ -77,7 +77,7 @@ CURLcode Curl_write(struct Curl_easy *data,
                     ssize_t *written);
 
 /* internal write-function, does plain sockets ONLY */
-CURLcode Curl_write_plain(struct connectdata *conn,
+CURLcode Curl_write_plain(struct Curl_easy *data,
                           curl_socket_t sockfd,
                           const void *mem, size_t len,
                           ssize_t *written);
