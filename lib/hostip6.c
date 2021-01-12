@@ -81,7 +81,7 @@ bool Curl_ipv6works(struct Curl_easy *data)
       ipv6_works = 0;
     else {
       ipv6_works = 1;
-      Curl_closesocket(data, NULL, s);
+      close(s);
     }
     return (ipv6_works>0)?TRUE:FALSE;
   }
@@ -160,7 +160,7 @@ struct Curl_addrinfo *Curl_getaddrinfo(struct connectdata *conn,
     break;
   }
 
-  if((pf != PF_INET) && !Curl_ipv6works(conn))
+  if((pf != PF_INET) && !Curl_ipv6works(data))
     /* The stack seems to be a non-IPv6 one */
     pf = PF_INET;
 
